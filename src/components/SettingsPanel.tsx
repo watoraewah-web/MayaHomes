@@ -6,8 +6,8 @@ import {
   TextAlignment,
   VerticalPosition,
 } from "@/lib/types";
-import { friendlyError } from "@/lib/supabase/data";
-import { Button, ErrorMessage, Input, Label, Select } from "@/components/ui";
+import { useNotifications } from "@/components/Notifications";
+import { Button, Input, Label, Select } from "@/components/ui";
 import { ImageIcon, UploadIcon } from "@/components/icons";
 
 const FONT_FAMILIES = [
@@ -27,6 +27,10 @@ const FONT_FAMILIES = [
   "Book Antiqua",
   "Cambria",
 ];
+const MEDIA_SIZE_LIMITS = {
+  image: 10 * 1024 * 1024,
+  video: 50 * 1024 * 1024,
+} as const;
 
 function SegmentedControl<T extends string>({
   value,
@@ -87,8 +91,8 @@ export function SettingsPanel({
   settings: PresentationSettings;
   onChange: (patch: Partial<PresentationSettings>) => void;
 }) {
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"image" | "video" | null>(null);
+  const { notify } = useNotifications();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaUrlRef = useRef<string | null>(null);
@@ -102,7 +106,18 @@ export function SettingsPanel({
 
   async function handleUpload(kind: "image" | "video", file: File | undefined) {
     if (!file) return;
-    setUploadError(null);
+    const limit = MEDIA_SIZE_LIMITS[kind];
+    if (file.size > limit) {
+      notify(
+        "error",
+        `${kind === "video" ? "Video" : "Image"} files must be ${
+          kind === "video" ? "50 MB" : "10 MB"
+        } or smaller.`,
+      );
+      if (imageInputRef.current) imageInputRef.current.value = "";
+      if (videoInputRef.current) videoInputRef.current.value = "";
+      return;
+    }
     setUploading(kind);
     try {
       const url = URL.createObjectURL(file);
@@ -114,7 +129,7 @@ export function SettingsPanel({
           : { backgroundType: "video", backgroundVideoUrl: url },
       );
     } catch (e) {
-      setUploadError(friendlyError(e));
+      notify("error", e instanceof Error ? e.message : "Could not load media.");
     } finally {
       setUploading(null);
       if (imageInputRef.current) imageInputRef.current.value = "";
@@ -124,6 +139,18 @@ export function SettingsPanel({
 
   function handleTextColorChange(color: string) {
     onChange({ textColor: color });
+  }
+
+  function removeMedia() {
+    if (mediaUrlRef.current) {
+      URL.revokeObjectURL(mediaUrlRef.current);
+      mediaUrlRef.current = null;
+    }
+    onChange({
+      backgroundType: "solid",
+      backgroundImageUrl: null,
+      backgroundVideoUrl: null,
+    });
   }
 
   return (
@@ -328,10 +355,15 @@ export function SettingsPanel({
               Upload image
             </Button>
             {settings.backgroundImageUrl ? (
-              <p className="flex items-center gap-1.5 truncate text-xs text-zinc-500">
-                <ImageIcon width={12} height={12} className="shrink-0" />
-                Image applied
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="flex items-center gap-1.5 truncate text-xs text-zinc-500">
+                  <ImageIcon width={12} height={12} className="shrink-0" />
+                  Image applied
+                </p>
+                <Button size="sm" variant="ghost" onClick={removeMedia}>
+                  Remove
+                </Button>
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -354,15 +386,18 @@ export function SettingsPanel({
               Upload video
             </Button>
             {settings.backgroundVideoUrl ? (
-              <p className="text-xs leading-relaxed text-zinc-500">
-                Video plays in preview. Exported slides use a dark background,
-                since .pptx does not support video backgrounds.
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs leading-relaxed text-zinc-500">
+                  Video plays in preview. Exported slides use a dark background,
+                  since .pptx does not support video backgrounds.
+                </p>
+                <Button size="sm" variant="ghost" onClick={removeMedia}>
+                  Remove
+                </Button>
+              </div>
             ) : null}
           </div>
         ) : null}
-
-        {uploadError ? <ErrorMessage>{uploadError}</ErrorMessage> : null}
       </Group>
     </div>
   );
