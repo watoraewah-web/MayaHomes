@@ -302,6 +302,11 @@ export function PreviewPane({
   const next = clamped < total - 1 ? slides[clamped + 1] : null;
   const lastNav = useRef(0);
   const [selected, setSelected] = useState(false);
+  const [fontSizeInput, setFontSizeInput] = useState("");
+
+  useEffect(() => {
+    setFontSizeInput(String(current?.fontSize ?? settings.fontSize));
+  }, [current?.fontSize, settings.fontSize]);
 
   // Keyboard navigation while the preview is on screen.
   useEffect(() => {
@@ -373,18 +378,29 @@ export function PreviewPane({
             ))}
           </Select>
           <input
-            type="number"
-            min={14}
-            max={72}
-            value={settings.fontSize}
-            onChange={(event) =>
-              onSettingsChange?.({
-                fontSize: Math.min(
-                  72,
-                  Math.max(14, Number(event.target.value) || settings.fontSize),
-                ),
-              })
-            }
+            type="text"
+            inputMode="decimal"
+            value={fontSizeInput}
+            onChange={(event) => {
+              const value = event.target.value;
+              setFontSizeInput(value);
+              const parsed = Number(value);
+              if (
+                value.trim() &&
+                Number.isFinite(parsed) &&
+                parsed >= 14 &&
+                parsed <= 72
+              )
+                onSettingsChange?.({ fontSize: parsed });
+            }}
+            onBlur={() => {
+              const parsed = Number(fontSizeInput);
+              const fontSize = Number.isFinite(parsed)
+                ? Math.min(72, Math.max(14, parsed))
+                : (current?.fontSize ?? settings.fontSize);
+              setFontSizeInput(String(fontSize));
+              onSettingsChange?.({ fontSize });
+            }}
             className="focus-ring h-8 w-16 rounded-md border border-zinc-300 px-2 text-xs"
             aria-label="Preview font size"
           />
@@ -477,7 +493,7 @@ export function PreviewPane({
       </div>
 
       {!presentationMode ? (
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
               Previous

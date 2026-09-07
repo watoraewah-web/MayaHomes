@@ -340,7 +340,7 @@ export default function WorshipSetEditorPage() {
         : "All changes saved";
 
   return (
-    <div className="mx-auto max-w-[1400px] px-6 py-8">
+    <div className="mx-auto w-full max-w-[1400px] min-w-0 px-6 py-8">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <Input
@@ -388,8 +388,8 @@ export default function WorshipSetEditorPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Songs{" "}
@@ -519,7 +519,7 @@ export default function WorshipSetEditorPage() {
             </div>
           </Card>
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Set Preview
