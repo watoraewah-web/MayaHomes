@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  getSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/client";
 import { Button, ErrorMessage, Input, Label } from "@/components/ui";
 import { MayaMark } from "@/components/icons";
 
@@ -41,7 +44,7 @@ export default function SignUpPage() {
         router.refresh();
       } else {
         setNotice(
-          "Account created. Check your email for a confirmation link before signing in."
+          "Account created. Check your email for a confirmation link before signing in.",
         );
       }
     } finally {
@@ -56,11 +59,17 @@ export default function SignUpPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-2">
           <MayaMark className="text-zinc-900" />
-          <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">MAYA</span>
+          <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
+            MAYA
+          </span>
         </div>
         <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-card">
-          <h1 className="text-base font-semibold text-zinc-900">Create account</h1>
-          <p className="mb-5 mt-1 text-sm text-zinc-500">Start building worship presentations.</p>
+          <h1 className="text-base font-semibold text-zinc-900">
+            Create account
+          </h1>
+          <p className="mb-5 mt-1 text-sm text-zinc-500">
+            Start building worship presentations.
+          </p>
           {configured ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -106,19 +115,28 @@ export default function SignUpPage() {
                   {notice}
                 </div>
               ) : null}
-              <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                loading={loading}
+                className="w-full"
+              >
                 Create Account
               </Button>
             </form>
           ) : (
             <ErrorMessage>
-              Supabase is not configured. Add your project credentials to .env.local
-              and restart the app.
+              Supabase is not configured. Add your project credentials to
+              .env.local and restart the app.
             </ErrorMessage>
           )}
           <p className="mt-5 border-t border-zinc-100 pt-4 text-center text-sm text-zinc-500">
             Already have an account?{" "}
-            <Link href="/signin" className="font-medium text-zinc-900 underline underline-offset-2">
+            <Link
+              href="/signin"
+              className="font-medium text-zinc-900 underline underline-offset-2"
+            >
               Sign in
             </Link>
           </p>

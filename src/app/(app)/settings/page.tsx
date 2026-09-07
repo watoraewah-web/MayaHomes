@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { fetchProfile, friendlyError, updateProfile } from "@/lib/supabase/data";
+import {
+  fetchProfile,
+  friendlyError,
+  updateProfile,
+} from "@/lib/supabase/data";
 import { Profile } from "@/lib/types";
 import {
   Button,
@@ -66,8 +70,12 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Settings</h1>
-        <p className="mt-1 text-sm text-zinc-500">Your MAYA account and profile.</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          Settings
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Your MAYA account and profile.
+        </p>
       </div>
 
       {error ? (
@@ -89,7 +97,10 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-4 border-t border-zinc-100 pt-5">
+        <form
+          onSubmit={handleSave}
+          className="space-y-4 border-t border-zinc-100 pt-5"
+        >
           <div>
             <Label htmlFor="full-name">Full name</Label>
             <Input
@@ -106,7 +117,12 @@ export default function SettingsPage() {
           </div>
           {success ? <SuccessMessage>{success}</SuccessMessage> : null}
           <div className="flex justify-end">
-            <Button type="submit" variant="primary" loading={saving} disabled={!userId}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={saving}
+              disabled={!userId}
+            >
               Save Changes
             </Button>
           </div>
@@ -114,9 +130,9 @@ export default function SettingsPage() {
       </Card>
 
       <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-5 text-xs leading-relaxed text-zinc-400 shadow-card">
-        MAYA treats all lyrics as user-provided content. Only paste lyrics you are
-        authorized to use. Your songs, sections, and presentations are private to
-        your account.
+        MAYA treats all lyrics as user-provided content. Only paste lyrics you
+        are authorized to use. Your songs, sections, and presentations are
+        private to your account.
       </div>
     </div>
   );

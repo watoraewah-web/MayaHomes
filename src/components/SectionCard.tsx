@@ -2,7 +2,12 @@
 
 import { SectionType, SECTION_TYPE_OPTIONS } from "@/lib/types";
 import { Button, Select } from "@/components/ui";
-import { CopyIcon, DeleteIcon, MoveDownIcon, MoveUpIcon } from "@/components/icons";
+import {
+  CopyIcon,
+  DeleteIcon,
+  MoveDownIcon,
+  MoveUpIcon,
+} from "@/components/icons";
 
 export interface EditorSection {
   key: string;
@@ -25,7 +30,11 @@ export function toEditorSections(rows: EditorSectionSource[]): EditorSection[] {
     content: r.content,
   }));
 }
-type EditorSectionSource = { section_type: SectionType; section_label: string; content: string };
+type EditorSectionSource = {
+  section_type: SectionType;
+  section_label: string;
+  content: string;
+};
 
 const TYPE_BADGE_STYLES: Record<string, string> = {
   verse: "text-zinc-600",
@@ -65,18 +74,25 @@ export function SectionCard({
   return (
     <div className="rounded-lg border border-zinc-200 bg-white shadow-card">
       <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 px-3 py-2">
-        <span className="w-6 text-center text-xs font-medium text-zinc-400" title={`Section ${index + 1}`}>
+        <span
+          className="w-6 text-center text-xs font-medium text-zinc-400"
+          title={`Section ${index + 1}`}
+        >
           {index + 1}
         </span>
         <Select
           value={section.section_type}
           onChange={(e) => {
             const type = e.target.value as SectionType;
-            const label = SECTION_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? "Custom";
+            const label =
+              SECTION_TYPE_OPTIONS.find((o) => o.value === type)?.label ??
+              "Custom";
             // Only auto-rename when the label still matches the old default.
             const oldDefault =
-              SECTION_TYPE_OPTIONS.find((o) => o.value === section.section_type)?.label ?? "";
-            const labelUntouched = !section.section_label || section.section_label === oldDefault;
+              SECTION_TYPE_OPTIONS.find((o) => o.value === section.section_type)
+                ?.label ?? "";
+            const labelUntouched =
+              !section.section_label || section.section_label === oldDefault;
             onChange({
               section_type: type,
               ...(labelUntouched ? { section_label: label } : {}),
