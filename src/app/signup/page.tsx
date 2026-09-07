@@ -70,7 +70,7 @@ export default function SignUpPage() {
                   autoComplete="name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder="Enter your full name"
                   required
                 />
               </div>
@@ -82,7 +82,7 @@ export default function SignUpPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@church.org"
+                  placeholder="Enter your email address"
                   required
                 />
               </div>
@@ -96,7 +96,7 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Choose a password"
+                  placeholder="Enter a password"
                   required
                 />
               </div>

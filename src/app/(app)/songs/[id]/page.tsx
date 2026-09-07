@@ -342,7 +342,7 @@ export default function SongEditorPage() {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Song title"
+              placeholder="Enter song title"
               className="border-transparent bg-transparent !px-0 text-xl font-semibold tracking-tight hover:border-zinc-200 focus:bg-white"
               aria-label="Song title"
               maxLength={200}
@@ -351,7 +351,7 @@ export default function SongEditorPage() {
               <Input
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
-                placeholder="Artist (optional)"
+                placeholder="Enter artist name (optional)"
                 className="h-8 w-full border-transparent bg-transparent !px-0 text-sm text-zinc-500 hover:border-zinc-200 focus:bg-white sm:max-w-[220px]"
                 aria-label="Artist"
                 maxLength={200}

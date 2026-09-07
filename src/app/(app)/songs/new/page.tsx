@@ -93,7 +93,7 @@ export default function NewSongPage() {
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Amazing Grace"
+              placeholder="Enter song title"
               maxLength={200}
             />
           </div>
@@ -105,7 +105,7 @@ export default function NewSongPage() {
             id="lyrics"
             value={lyrics}
             onChange={(e) => setLyrics(e.target.value)}
-            placeholder="Paste your complete song lyrics here..."
+            placeholder="Enter or paste song lyrics"
             rows={16}
             className="min-h-[320px] font-mono text-[13px]"
             spellCheck={false}

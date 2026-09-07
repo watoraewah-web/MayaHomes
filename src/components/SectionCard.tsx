@@ -94,7 +94,7 @@ export function SectionCard({
         <input
           value={section.section_label}
           onChange={(e) => onChange({ section_label: e.target.value })}
-          placeholder="Section label"
+          placeholder="Enter section label"
           maxLength={60}
           className={`focus-ring h-8 min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 text-xs font-semibold uppercase tracking-wide ${TYPE_BADGE_STYLES[section.section_type] ?? "text-zinc-600"} hover:border-zinc-200`}
           aria-label="Section label"
@@ -138,7 +138,7 @@ export function SectionCard({
           value={section.content}
           onChange={(e) => onChange({ content: e.target.value })}
           rows={rows}
-          placeholder="Lyrics for this section..."
+          placeholder="Enter lyrics for this section"
           spellCheck={false}
           className="focus-ring w-full resize-y rounded-md border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 font-mono text-[13px] leading-relaxed text-zinc-800 placeholder:text-zinc-300"
         />

@@ -96,7 +96,7 @@ export default function SettingsPage() {
               id="full-name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Your name"
+              placeholder="Enter your full name"
               maxLength={120}
             />
           </div>

@@ -908,7 +908,7 @@ export default function WorshipSetEditorPage() {
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search songs"
+                  placeholder="Search songs to add"
                   className="pl-9"
                   autoFocus
                 />

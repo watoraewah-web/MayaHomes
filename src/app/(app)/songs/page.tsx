@@ -186,7 +186,7 @@ export default function SongsPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by title or artist"
+          placeholder="Search songs by title or artist"
           className="pl-9"
           aria-label="Search songs"
         />

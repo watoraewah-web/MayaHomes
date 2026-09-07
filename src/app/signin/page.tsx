@@ -55,7 +55,7 @@ function SignInForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@church.org"
+          placeholder="Enter your email address"
         />
       </div>
       <div>
@@ -67,7 +67,7 @@ function SignInForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Your password"
+          placeholder="Enter your password"
         />
       </div>
       {error ? <ErrorMessage>{error}</ErrorMessage> : null}
