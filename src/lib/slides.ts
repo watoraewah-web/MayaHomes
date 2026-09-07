@@ -32,6 +32,7 @@ export interface Slide {
   sourceStartLine?: number;
   sourceLineCount?: number;
   sourceText?: string;
+  dateLabel?: string | null;
 }
 
 export interface WorshipSetSlideInput {
@@ -54,6 +55,16 @@ export function replaceSlideSource(
     ...replacement.split("\n"),
   );
   return lines.join("\n");
+}
+
+export function sundayDateLabel(date = new Date()): string | null {
+  return date.getDay() === 0
+    ? date.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 }
 
 /* ------------------------------- geometry -------------------------------- */
@@ -349,7 +360,8 @@ export function buildSlides(
     }
   });
 
-  return slides;
+  const dateLabel = sundayDateLabel();
+  return slides.map((slide) => ({ ...slide, dateLabel }));
 }
 
 function makeSlide(

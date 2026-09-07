@@ -8,8 +8,9 @@ const {
   ptToPx,
   LINE_HEIGHT,
   minFontSize,
+  sundayDateLabel,
 } = require("./tmp-test/slides.js");
-const { DEFAULT_SETTINGS } = require("./tmp-test/types.js");
+const { DEFAULT_SETTINGS, normalizeSettings } = require("./tmp-test/types.js");
 const { measureTextWidth } = require("./tmp-test/textMeasure.js");
 const { generatePowerPoint } = require("./tmp-test/pptx.js");
 const fs = require("fs");
@@ -494,6 +495,31 @@ check(
 
 /* ===== 13. Empty section produces blank slide ===== */
 {
+  check(
+    "font size below 14 normalizes to default",
+    normalizeSettings({ fontSize: 13 }).fontSize === DEFAULT_SETTINGS.fontSize,
+  );
+  check(
+    "font size 14 remains valid",
+    normalizeSettings({ fontSize: 14 }).fontSize === 14,
+  );
+  check(
+    "font size 72 remains valid",
+    normalizeSettings({ fontSize: 72 }).fontSize === 72,
+  );
+  check(
+    "font size above 72 normalizes to default",
+    normalizeSettings({ fontSize: 73 }).fontSize === DEFAULT_SETTINGS.fontSize,
+  );
+  check(
+    "Sunday date label is present on Sunday",
+    sundayDateLabel(new Date(2024, 0, 7)) !== null,
+  );
+  check(
+    "Sunday date label is absent on other days",
+    sundayDateLabel(new Date(2024, 0, 8)) === null,
+  );
+
   const sl = buildSlides(
     [{ section_type: "outro", section_label: "Outro", content: "" }],
     S(),

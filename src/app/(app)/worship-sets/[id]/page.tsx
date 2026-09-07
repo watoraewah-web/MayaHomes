@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchSectionsForSongs,
+  fetchSections,
   saveSections,
   removeSongFromWorshipSet,
   fetchSongs,
@@ -94,7 +95,11 @@ export default function WorshipSetEditorPage() {
   const lyricsSaveTimers = useRef<
     Record<string, ReturnType<typeof setTimeout>>
   >({});
-  const lyricsSaveVersions = useRef<Record<string, number>>({});
+  const sectionSaveVersions = useRef<Record<string, number>>({});
+  const sectionSaveQueues = useRef<Record<string, Promise<void>>>({});
+  const persistedSectionsRef = useRef<Record<string, SongSection[]>>({});
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveVersionRef = useRef(0);
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
 
@@ -124,6 +129,7 @@ export default function WorshipSetEditorPage() {
         setItems(loadedItems);
         setSongs(library);
         setSections(sectionsBySong);
+        persistedSectionsRef.current = sectionsBySong;
         loaded.current = true;
       })
       .catch((e) => setError(friendlyError(e)))
@@ -175,28 +181,38 @@ export default function WorshipSetEditorPage() {
 
   useEffect(() => {
     if (!loaded.current || !set) return;
+    const version = saveVersionRef.current + 1;
+    saveVersionRef.current = version;
     setSaveState("saving");
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
+    saveTimer.current = setTimeout(() => {
+      const savedName = name.trim() || "Untitled Worship Set";
+      const savedSettings = settings;
+      const savedTitleSlides = titleSlides;
+      const savedItems = items.map((item) => item.song_id);
       const adding = operationStatusRef.current === "Adding song...";
-      if (adding) updateOperationStatus("Saving song to worship set...");
-      try {
-        await updateWorshipSet(set.id, {
-          name: name.trim() || "Untitled Worship Set",
-          settings,
-          add_song_title_slides: titleSlides,
-        });
-        await saveWorshipSetSongs(
-          set.id,
-          items.map((item) => item.song_id),
-        );
-        setSaveState("saved");
-        if (adding) updateOperationStatus(null);
-      } catch (e) {
-        setError(friendlyError(e));
-        setSaveState("error");
-        if (adding) updateOperationStatus(null);
-      }
+      const save = async () => {
+        if (saveVersionRef.current === version && adding)
+          updateOperationStatus("Saving song to worship set...");
+        try {
+          await updateWorshipSet(set.id, {
+            name: savedName,
+            settings: savedSettings,
+            add_song_title_slides: savedTitleSlides,
+          });
+          await saveWorshipSetSongs(set.id, savedItems);
+          if (saveVersionRef.current === version) {
+            setSaveState("saved");
+            if (adding) updateOperationStatus(null);
+          }
+        } catch (e) {
+          if (saveVersionRef.current !== version) return;
+          setError(friendlyError(e));
+          setSaveState("error");
+          if (adding) updateOperationStatus(null);
+        }
+      };
+      saveQueueRef.current = saveQueueRef.current.then(save, save);
     }, 700);
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -215,6 +231,7 @@ export default function WorshipSetEditorPage() {
     setAddingSongId(song.id);
     updateOperationStatus("Adding song...");
     try {
+      const songSections = await fetchSections(song.id);
       setItems((prev) => [
         ...prev,
         {
@@ -225,8 +242,13 @@ export default function WorshipSetEditorPage() {
           song,
         },
       ]);
-      setSections((prev) => ({ ...prev, [song.id]: prev[song.id] ?? [] }));
+      setSections((prev) => ({ ...prev, [song.id]: songSections }));
+      persistedSectionsRef.current[song.id] = songSections;
       setShowAdd(false);
+    } catch (e) {
+      const message = friendlyError(e);
+      setError(message);
+      notify("error", message);
     } finally {
       setAddingSongId(null);
     }
@@ -287,11 +309,7 @@ export default function WorshipSetEditorPage() {
     setLyricsSaveState((prev) => ({ ...prev, [songId]: "saved" }));
   }
 
-  function closeLyricsEditor(songId: string) {
-    if (lyricsSaveTimers.current[songId]) {
-      clearTimeout(lyricsSaveTimers.current[songId]);
-      delete lyricsSaveTimers.current[songId];
-    }
+  function finishLyricsEditor(songId: string) {
     setLyricsDrafts((prev) => {
       const next = { ...prev };
       delete next[songId];
@@ -300,9 +318,53 @@ export default function WorshipSetEditorPage() {
     setEditingSongId(null);
   }
 
+  function cancelLyricsEditor(songId: string) {
+    if (lyricsSaveTimers.current[songId]) {
+      clearTimeout(lyricsSaveTimers.current[songId]);
+      delete lyricsSaveTimers.current[songId];
+    }
+    const version = (sectionSaveVersions.current[songId] ?? 0) + 1;
+    sectionSaveVersions.current[songId] = version;
+    if (songSaveTimers.current[songId]) {
+      clearTimeout(songSaveTimers.current[songId]);
+      delete songSaveTimers.current[songId];
+    }
+    const persisted = persistedSectionsRef.current[songId] ?? [];
+    const payload = persisted.map(
+      ({ section_type, section_label, content }) => ({
+        section_type,
+        section_label,
+        content,
+      }),
+    );
+    const restore = async () => {
+      try {
+        const saved = await saveSections(songId, payload);
+        persistedSectionsRef.current[songId] = saved;
+        if (sectionSaveVersions.current[songId] !== version) return;
+        setSections((prev) => ({ ...prev, [songId]: saved }));
+      } catch (e) {
+        if (sectionSaveVersions.current[songId] !== version) return;
+        const message = friendlyError(e);
+        setError(message);
+        notify("error", message);
+      }
+    };
+    const queue = sectionSaveQueues.current[songId] ?? Promise.resolve();
+    sectionSaveQueues.current[songId] = queue.then(restore, restore);
+    setLyricsDrafts((prev) => {
+      const next = { ...prev };
+      delete next[songId];
+      return next;
+    });
+    setSections((prev) => ({ ...prev, [songId]: persisted }));
+    setLyricsSaveState((prev) => ({ ...prev, [songId]: "saved" }));
+    setEditingSongId(null);
+  }
+
   function updateLyricsDraft(songId: string, draft: EditorSection[]) {
-    const version = (lyricsSaveVersions.current[songId] ?? 0) + 1;
-    lyricsSaveVersions.current[songId] = version;
+    const version = (sectionSaveVersions.current[songId] ?? 0) + 1;
+    sectionSaveVersions.current[songId] = version;
     setLyricsDrafts((prev) => ({ ...prev, [songId]: draft }));
     setSections((prev) => ({
       ...prev,
@@ -318,28 +380,32 @@ export default function WorshipSetEditorPage() {
     setLyricsSaveState((prev) => ({ ...prev, [songId]: "saving" }));
     if (lyricsSaveTimers.current[songId])
       clearTimeout(lyricsSaveTimers.current[songId]);
-    lyricsSaveTimers.current[songId] = setTimeout(async () => {
-      try {
-        const saved = await saveSections(
-          songId,
-          draft.map(({ section_type, section_label, content }) => ({
-            section_type,
-            section_label,
-            content,
-          })),
-        );
-        if (lyricsSaveVersions.current[songId] !== version) return;
-        setSections((prev) => ({ ...prev, [songId]: saved }));
-        setLyricsDrafts((prev) => ({
-          ...prev,
-          [songId]: toEditorSections(saved),
-        }));
-        setLyricsSaveState((prev) => ({ ...prev, [songId]: "saved" }));
-      } catch (e) {
-        if (lyricsSaveVersions.current[songId] !== version) return;
-        setError(friendlyError(e));
-        setLyricsSaveState((prev) => ({ ...prev, [songId]: "error" }));
-      }
+    lyricsSaveTimers.current[songId] = setTimeout(() => {
+      const payload = draft.map(({ section_type, section_label, content }) => ({
+        section_type,
+        section_label,
+        content,
+      }));
+      const save = async () => {
+        if (sectionSaveVersions.current[songId] !== version) return;
+        try {
+          const saved = await saveSections(songId, payload);
+          if (sectionSaveVersions.current[songId] !== version) return;
+          persistedSectionsRef.current[songId] = saved;
+          setSections((prev) => ({ ...prev, [songId]: saved }));
+          setLyricsDrafts((prev) => ({
+            ...prev,
+            ...(prev[songId] ? { [songId]: toEditorSections(saved) } : {}),
+          }));
+          setLyricsSaveState((prev) => ({ ...prev, [songId]: "saved" }));
+        } catch (e) {
+          if (sectionSaveVersions.current[songId] !== version) return;
+          setError(friendlyError(e));
+          setLyricsSaveState((prev) => ({ ...prev, [songId]: "error" }));
+        }
+      };
+      const queue = sectionSaveQueues.current[songId] ?? Promise.resolve();
+      sectionSaveQueues.current[songId] = queue.then(save, save);
     }, 700);
   }
 
@@ -385,6 +451,8 @@ export default function WorshipSetEditorPage() {
     const item = items[slide.songIndex];
     if (!item?.song) return;
     const songId = item.song.id;
+    const version = (sectionSaveVersions.current[songId] ?? 0) + 1;
+    sectionSaveVersions.current[songId] = version;
     updateOperationStatus("Saving song...");
     setSections((prev) => ({
       ...prev,
@@ -399,22 +467,31 @@ export default function WorshipSetEditorPage() {
     }));
     if (songSaveTimers.current[songId])
       clearTimeout(songSaveTimers.current[songId]);
-    songSaveTimers.current[songId] = setTimeout(async () => {
+    songSaveTimers.current[songId] = setTimeout(() => {
       const nextSections = sectionsRef.current[songId] ?? [];
-      try {
-        await saveSections(
-          songId,
-          nextSections.map((section) => ({
-            section_type: section.section_type,
-            section_label: section.section_label,
-            content: section.content,
-          })),
-        );
-        updateOperationStatus(null);
-      } catch (e) {
-        setError(friendlyError(e));
-        updateOperationStatus(null);
-      }
+      const save = async () => {
+        if (sectionSaveVersions.current[songId] !== version) return;
+        try {
+          await saveSections(
+            songId,
+            nextSections.map((section) => ({
+              section_type: section.section_type,
+              section_label: section.section_label,
+              content: section.content,
+            })),
+          );
+          if (sectionSaveVersions.current[songId] === version) {
+            persistedSectionsRef.current[songId] = nextSections;
+            updateOperationStatus(null);
+          }
+        } catch (e) {
+          if (sectionSaveVersions.current[songId] !== version) return;
+          setError(friendlyError(e));
+          updateOperationStatus(null);
+        }
+      };
+      const queue = sectionSaveQueues.current[songId] ?? Promise.resolve();
+      sectionSaveQueues.current[songId] = queue.then(save, save);
     }, 700);
   }
 
@@ -597,7 +674,7 @@ export default function WorshipSetEditorPage() {
                           variant={isEditing ? "primary" : "ghost"}
                           onClick={() =>
                             isEditing
-                              ? closeLyricsEditor(songId)
+                              ? finishLyricsEditor(songId)
                               : openLyricsEditor(songId)
                           }
                         >
@@ -695,7 +772,7 @@ export default function WorshipSetEditorPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => closeLyricsEditor(songId)}
+                            onClick={() => cancelLyricsEditor(songId)}
                           >
                             Cancel
                           </Button>

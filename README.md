@@ -11,7 +11,7 @@ preview the presentation, and generate a real `.pptx` file.
 
 - **Next.js 15** (App Router) + **TypeScript**
 - **Tailwind CSS** — neutral, production-grade UI (black / white / gray, SVG icons only)
-- **Supabase** — Auth, PostgreSQL (with Row Level Security), Storage for background assets
+- **Supabase** — Auth and PostgreSQL with Row Level Security
 - **PptxGenJS** — real PowerPoint generation in the browser
 
 ## Setup
@@ -21,8 +21,9 @@ preview the presentation, and generate a real `.pptx` file.
 1. Go to [supabase.com](https://supabase.com) and create a project.
 2. Open **SQL Editor** in the Supabase dashboard and run the contents of
    [`supabase/schema.sql`](supabase/schema.sql). This creates the tables
-   (`profiles`, `songs`, `song_sections`, `presentations`), triggers, Row Level
-   Security policies, and the public `maya-assets` storage bucket.
+   (`profiles`, `songs`, `song_sections`, `presentations`), transaction
+   functions, triggers, and Row Level Security policies. It also secures any
+   legacy `maya-assets` bucket without deleting its objects.
 3. Recommended: in **Authentication -> Providers -> Email**, disable
    "Confirm email" if you want users to sign in immediately after sign-up
    (otherwise they must click the confirmation link first).
@@ -69,9 +70,11 @@ Open http://localhost:3000. For a production build: `npm run build && npm start`
 7. **Presentation settings** — aspect ratio (16:9 / 4:3), font family, size,
    weight, text alignment, text position (top/center/bottom), max lines per
    slide, section label toggle, and background (solid color, uploaded image,
-   or uploaded video — video plays in the preview; exported slides fall back
-   to a dark solid background because `.pptx` does not support video
-   backgrounds). Uploaded assets go to Supabase Storage.
+   or session-local image/video — selected media is held in the browser with
+   an object URL and is cleared when the page or session is reloaded. Images
+   can be used for the current PowerPoint export; exported slides fall back to
+   a dark solid background for video because `.pptx` does not support video
+   backgrounds. Media is not uploaded or persisted to Supabase Storage.
 8. **Generate PowerPoint** — produces a real, fully formatted `.pptx` named
    `MAYA - [Song Title].pptx` and downloads it.
 

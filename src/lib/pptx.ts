@@ -73,17 +73,6 @@ function safeFilePart(value: string): string {
   return value.trim().replace(/[/\\:*?"<>|]/g, "-") || "Untitled";
 }
 
-function sundayDateLabel(): string | null {
-  const now = new Date();
-  return now.getDay() === 0
-    ? now.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : null;
-}
-
 async function writePowerPoint({
   title,
   author,
@@ -138,7 +127,7 @@ async function writePowerPoint({
     settings.backgroundType === "video" ? "#111111" : settings.backgroundColor;
   const textColor = settings.textColor.replace("#", "");
   const labelColor = textColor;
-  const dateLabel = sundayDateLabel();
+  const dateLabel = slides[0]?.dateLabel ?? null;
 
   const labelHeightPx = settings.showSectionLabel
     ? ptToPx(12) * LINE_HEIGHT + 16

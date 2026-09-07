@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  getSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/client";
+import { getSafeNextPath } from "@/lib/safeRedirect";
 import { Button, ErrorMessage, Input, Label } from "@/components/ui";
 import { MayaMark } from "@/components/icons";
 
@@ -21,16 +25,19 @@ function SignInForm() {
     setLoading(true);
     try {
       const supabase = getSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) {
         setError(
           error.message === "Invalid login credentials"
             ? "Incorrect email or password. Please try again."
-            : error.message
+            : error.message,
         );
         return;
       }
-      router.push(searchParams.get("next") ?? "/dashboard");
+      router.push(getSafeNextPath(searchParams.get("next")));
       router.refresh();
     } finally {
       setLoading(false);
@@ -64,7 +71,13 @@ function SignInForm() {
         />
       </div>
       {error ? <ErrorMessage>{error}</ErrorMessage> : null}
-      <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        loading={loading}
+        className="w-full"
+      >
         Sign In
       </Button>
     </form>
@@ -78,7 +91,9 @@ export default function SignInPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-2">
           <MayaMark className="text-zinc-900" />
-          <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">MAYA</span>
+          <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
+            MAYA
+          </span>
         </div>
         <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-card">
           <h1 className="text-base font-semibold text-zinc-900">Sign in</h1>
@@ -97,7 +112,10 @@ export default function SignInPage() {
           )}
           <p className="mt-5 border-t border-zinc-100 pt-4 text-center text-sm text-zinc-500">
             No account yet?{" "}
-            <Link href="/signup" className="font-medium text-zinc-900 underline underline-offset-2">
+            <Link
+              href="/signup"
+              className="font-medium text-zinc-900 underline underline-offset-2"
+            >
               Create one
             </Link>
           </p>

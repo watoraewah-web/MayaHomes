@@ -27,6 +27,7 @@ function SlideSurface({
   settings,
   dimmed = false,
   badge,
+  showDate = false,
   editable = false,
   selected = false,
   onSelect,
@@ -37,6 +38,7 @@ function SlideSurface({
   settings: PresentationSettings;
   dimmed?: boolean;
   badge?: string;
+  showDate?: boolean;
   editable?: boolean;
   selected?: boolean;
   onSelect?: () => void;
@@ -255,6 +257,24 @@ function SlideSurface({
               </div>
             )}
           </div>
+          {showDate && slide?.dateLabel ? (
+            <div
+              className="absolute"
+              style={{
+                left: pad.x,
+                top: H - pad.y - labelPx,
+                width: W - pad.x * 2,
+                height: labelPx,
+                color: labelColor,
+                fontSize: labelPx,
+                lineHeight: 1,
+                fontFamily: `"${settings.fontFamily}", Arial, sans-serif`,
+                textAlign: textAlignStyle,
+              }}
+            >
+              {slide.dateLabel}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -440,6 +460,7 @@ export function PreviewPane({
       <SlideSurface
         slide={current}
         settings={settings}
+        showDate={clamped === 0}
         editable={editable}
         selected={selected}
         onSelect={() => setSelected(true)}

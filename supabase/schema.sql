@@ -70,6 +70,145 @@ create index if not exists worship_set_songs_order_idx on public.worship_set_son
 
 create index if not exists presentations_song_id_idx on public.presentations (song_id);
 
+-- Keep one saved presentation per song. Preserve the newest duplicate before
+-- adding the constraint so this is safe to apply to an existing database.
+with ranked_presentations as (
+  select
+    id,
+    row_number() over (
+      partition by song_id
+      order by updated_at desc nulls last, created_at desc nulls last, id desc
+    ) as row_number
+  from public.presentations
+)
+delete from public.presentations p
+using ranked_presentations duplicate
+where p.id = duplicate.id
+  and duplicate.row_number > 1;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'presentations_song_id_key'
+      and conrelid = 'public.presentations'::regclass
+  ) then
+    alter table public.presentations
+      add constraint presentations_song_id_key unique (song_id);
+  end if;
+end;
+$$;
+
+-- Transactional data operations --------------------------------------------
+
+create or replace function public.create_song_with_sections(
+  p_title text,
+  p_artist text,
+  p_raw_lyrics text,
+  p_sections jsonb
+)
+returns jsonb
+language plpgsql
+set search_path = public
+as $$
+declare
+  created_song public.songs;
+begin
+  insert into public.songs (user_id, title, artist, raw_lyrics)
+  values (auth.uid(), p_title, nullif(p_artist, ''), p_raw_lyrics)
+  returning * into created_song;
+
+  insert into public.song_sections (
+    song_id, section_type, section_label, content, section_order
+  )
+  select
+    created_song.id,
+    coalesce(item ->> 'section_type', 'verse'),
+    coalesce(item ->> 'section_label', ''),
+    coalesce(item ->> 'content', ''),
+    (entry.ordinality - 1)::integer
+  from jsonb_array_elements(coalesce(p_sections, '[]'::jsonb)) with ordinality as entry(item, ordinality);
+
+  return jsonb_build_object(
+    'song', to_jsonb(created_song),
+    'sections', coalesce(
+      (
+        select jsonb_agg(to_jsonb(ss) order by ss.section_order)
+        from public.song_sections ss
+        where ss.song_id = created_song.id
+      ),
+      '[]'::jsonb
+    )
+  );
+end;
+$$;
+
+create or replace function public.replace_song_sections(
+  p_song_id uuid,
+  p_sections jsonb
+)
+returns jsonb
+language plpgsql
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.songs
+    where id = p_song_id and user_id = auth.uid()
+  ) then
+    raise exception 'Song not found';
+  end if;
+
+  delete from public.song_sections where song_id = p_song_id;
+
+  insert into public.song_sections (
+    song_id, section_type, section_label, content, section_order
+  )
+  select
+    p_song_id,
+    coalesce(item ->> 'section_type', 'verse'),
+    coalesce(item ->> 'section_label', ''),
+    coalesce(item ->> 'content', ''),
+    (entry.ordinality - 1)::integer
+  from jsonb_array_elements(coalesce(p_sections, '[]'::jsonb)) with ordinality as entry(item, ordinality);
+
+  return coalesce(
+    (
+      select jsonb_agg(to_jsonb(ss) order by ss.section_order)
+      from public.song_sections ss
+      where ss.song_id = p_song_id
+    ),
+    '[]'::jsonb
+  );
+end;
+$$;
+
+create or replace function public.replace_worship_set_songs(
+  p_worship_set_id uuid,
+  p_song_ids uuid[]
+)
+returns void
+language plpgsql
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.worship_sets
+    where id = p_worship_set_id and user_id = auth.uid()
+  ) then
+    raise exception 'Worship set not found';
+  end if;
+
+  delete from public.worship_set_songs
+  where worship_set_id = p_worship_set_id;
+
+  insert into public.worship_set_songs (worship_set_id, song_id, song_order)
+  select p_worship_set_id, song_id, ordinality - 1
+  from unnest(coalesce(p_song_ids, '{}'::uuid[])) with ordinality as entries(song_id, ordinality);
+end;
+$$;
+
 -- updated_at trigger --------------------------------------------------------
 
 create or replace function public.set_updated_at()
@@ -172,28 +311,13 @@ create policy "worship_set_songs_all_own" on public.worship_set_songs
   );
 
 -- Storage --------------------------------------------------------------------
--- Public bucket for presentation background assets (images / videos).
+-- Presentation media is session-local in the browser and is not uploaded.
+-- Secure any legacy bucket without deleting its objects.
 
-insert into storage.buckets (id, name, public)
-values ('maya-assets', 'maya-assets', true)
-on conflict (id) do update set public = true;
+update storage.buckets
+set public = false
+where id = 'maya-assets';
 
 drop policy if exists "maya_assets_insert_own_folder" on storage.objects;
-create policy "maya_assets_insert_own_folder" on storage.objects
-  for insert to authenticated
-  with check (
-    bucket_id = 'maya-assets'
-    and (storage.foldername(name))[1] = auth.uid ()::text
-  );
-
 drop policy if exists "maya_assets_select_public" on storage.objects;
-create policy "maya_assets_select_public" on storage.objects
-  for select using (bucket_id = 'maya-assets');
-
 drop policy if exists "maya_assets_delete_own" on storage.objects;
-create policy "maya_assets_delete_own" on storage.objects
-  for delete to authenticated
-  using (
-    bucket_id = 'maya-assets'
-    and (storage.foldername(name))[1] = auth.uid ()::text
-  );

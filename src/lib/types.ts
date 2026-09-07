@@ -130,7 +130,7 @@ export function normalizeSettings(raw: unknown): PresentationSettings {
         ? s.textColor
         : DEFAULT_SETTINGS.textColor,
     fontSize:
-      typeof s.fontSize === "number" && s.fontSize >= 10 && s.fontSize <= 96
+      typeof s.fontSize === "number" && s.fontSize >= 14 && s.fontSize <= 72
         ? s.fontSize
         : DEFAULT_SETTINGS.fontSize,
     maxLinesPerSlide:

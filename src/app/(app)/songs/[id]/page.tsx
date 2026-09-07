@@ -79,6 +79,8 @@ export default function SongEditorPage() {
 
   const loadedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveVersionRef = useRef(0);
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
 
@@ -112,30 +114,38 @@ export default function SongEditorPage() {
   useEffect(() => {
     if (!loadedRef.current) return;
     if (!song) return;
+    const version = saveVersionRef.current + 1;
+    saveVersionRef.current = version;
     setSaveState("unsaved");
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      setSaveState("saving");
-      setSaveError(null);
-      try {
-        await updateSong(song.id, {
-          title: title.trim() || "Untitled",
-          artist,
-        });
-        const current = sectionsRef.current;
-        await saveSections(
-          song.id,
-          current.map((s) => ({
-            section_type: s.section_type,
-            section_label: s.section_label,
-            content: s.content,
-          })),
-        );
-        setSaveState("saved");
-      } catch (e) {
-        setSaveError(friendlyError(e));
-        setSaveState("error");
-      }
+    debounceRef.current = setTimeout(() => {
+      const current = sectionsRef.current;
+      const save = async () => {
+        if (saveVersionRef.current === version) {
+          setSaveState("saving");
+          setSaveError(null);
+        }
+        try {
+          await updateSong(song.id, {
+            title: title.trim() || "Untitled",
+            artist,
+          });
+          await saveSections(
+            song.id,
+            current.map((s) => ({
+              section_type: s.section_type,
+              section_label: s.section_label,
+              content: s.content,
+            })),
+          );
+          if (saveVersionRef.current === version) setSaveState("saved");
+        } catch (e) {
+          if (saveVersionRef.current !== version) return;
+          setSaveError(friendlyError(e));
+          setSaveState("error");
+        }
+      };
+      saveQueueRef.current = saveQueueRef.current.then(save, save);
     }, 900);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);

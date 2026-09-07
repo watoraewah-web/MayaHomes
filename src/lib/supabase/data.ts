@@ -85,20 +85,15 @@ export async function createSong(input: {
   if (userError || !user)
     throw new Error("Your session has expired. Please sign in again.");
 
-  const { data: song, error } = await supabase
-    .from("songs")
-    .insert({
-      user_id: user.id,
-      title: input.title,
-      artist: input.artist || null,
-      raw_lyrics: input.rawLyrics,
-    })
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc("create_song_with_sections", {
+    p_title: input.title,
+    p_artist: input.artist || null,
+    p_raw_lyrics: input.rawLyrics,
+    p_sections: input.parsed,
+  });
   if (error) throw new Error(friendlyError(error));
-
-  const sections = await saveSections(song.id, input.parsed);
-  return { song: song as Song, sections };
+  const result = data as { song: Song; sections: SongSection[] };
+  return { song: result.song, sections: result.sections };
 }
 
 export async function updateSong(
@@ -164,23 +159,10 @@ export async function saveSections(
   sections: ParsedSection[],
 ): Promise<SongSection[]> {
   const supabase = getSupabaseBrowserClient();
-  const { error: deleteError } = await supabase
-    .from("song_sections")
-    .delete()
-    .eq("song_id", songId);
-  if (deleteError) throw new Error(friendlyError(deleteError));
-  const rows = sections.map((s, i) => ({
-    song_id: songId,
-    section_type: s.section_type,
-    section_label: s.section_label,
-    content: s.content,
-    section_order: i,
-  }));
-  if (!rows.length) return [];
-  const { data, error } = await supabase
-    .from("song_sections")
-    .insert(rows)
-    .select();
+  const { data, error } = await supabase.rpc("replace_song_sections", {
+    p_song_id: songId,
+    p_sections: sections,
+  });
   if (error) throw new Error(friendlyError(error));
   return (data ?? []) as SongSection[];
 }
@@ -234,25 +216,21 @@ export async function upsertPresentation(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Your session has expired. Please sign in again.");
 
-  const existing = await fetchPresentationForSong(songId);
   const persistentSettings = {
     ...settings,
     backgroundImageUrl: null,
     backgroundVideoUrl: null,
   };
-  if (existing) {
-    const { data, error } = await supabase
-      .from("presentations")
-      .update({ settings: persistentSettings })
-      .eq("id", existing.id)
-      .select()
-      .single();
-    if (error) throw new Error(friendlyError(error));
-    return data as Presentation;
-  }
   const { data, error } = await supabase
     .from("presentations")
-    .insert({ user_id: user.id, song_id: songId, settings: persistentSettings })
+    .upsert(
+      {
+        user_id: user.id,
+        song_id: songId,
+        settings: persistentSettings,
+      },
+      { onConflict: "song_id" },
+    )
     .select()
     .single();
   if (error) throw new Error(friendlyError(error));
@@ -384,19 +362,10 @@ export async function saveWorshipSetSongs(
   songIds: string[],
 ): Promise<void> {
   const supabase = getSupabaseBrowserClient();
-  const { error: deleteError } = await supabase
-    .from("worship_set_songs")
-    .delete()
-    .eq("worship_set_id", id);
-  if (deleteError) throw new Error(friendlyError(deleteError));
-  if (!songIds.length) return;
-  const { error } = await supabase.from("worship_set_songs").insert(
-    songIds.map((songId, song_order) => ({
-      worship_set_id: id,
-      song_id: songId,
-      song_order,
-    })),
-  );
+  const { error } = await supabase.rpc("replace_worship_set_songs", {
+    p_worship_set_id: id,
+    p_song_ids: songIds,
+  });
   if (error) throw new Error(friendlyError(error));
 }
 
