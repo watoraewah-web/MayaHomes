@@ -460,6 +460,26 @@ check(
       ),
     repeatedBlockSlides.map((slide) => slide.sectionLabel),
   );
+
+  const pastedBlocks = "Block 1\n\nBlock 2\n\nBlock 3\n\nBlock 4\n\nBlock 5";
+  const pastedSections = parseLyrics(pastedBlocks);
+  check(
+    "pasted blank-separated blocks remain five sections",
+    pastedSections.length === 5 &&
+      pastedSections.every(
+        (section) => section.section_type === "uncategorized",
+      ) &&
+      pastedSections.map((section) => section.content).join("\n\n") ===
+        pastedBlocks,
+    pastedSections,
+  );
+  const singleLineBreaks = parseLyrics("line one\nline two\nline three");
+  check(
+    "pasted single line breaks remain unchanged",
+    singleLineBreaks.length === 1 &&
+      singleLineBreaks[0].content === "line one\nline two\nline three",
+    singleLineBreaks,
+  );
 }
 
 /* ===== 11. Aspect ratios & section labels ===== */

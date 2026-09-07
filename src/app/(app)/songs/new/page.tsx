@@ -105,6 +105,17 @@ export default function NewSongPage() {
             id="lyrics"
             value={lyrics}
             onChange={(e) => setLyrics(e.target.value)}
+            onPaste={(e) => {
+              e.preventDefault();
+              const textarea = e.currentTarget;
+              const pasted = e.clipboardData.getData("text/plain");
+              const start = textarea.selectionStart;
+              const end = textarea.selectionEnd;
+              setLyrics(
+                (current) =>
+                  current.slice(0, start) + pasted + current.slice(end),
+              );
+            }}
             placeholder="Enter or paste song lyrics"
             rows={16}
             className="min-h-[320px] font-mono text-[13px]"
