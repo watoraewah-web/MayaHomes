@@ -25,7 +25,7 @@ import {
 
 export default function PresentationsPage() {
   const router = useRouter();
-  const { requestConfirmation } = useNotifications();
+  const { notify, requestConfirmation } = useNotifications();
   const [items, setItems] = useState<(Presentation & { song: Song | null })[]>(
     [],
   );
@@ -53,8 +53,10 @@ export default function PresentationsPage() {
     try {
       await deletePresentation(id);
       setItems((prev) => prev.filter((p) => p.id !== id));
+      notify("success", "Presentation deleted.");
     } catch (e) {
       setError(friendlyError(e));
+      notify("error", friendlyError(e));
     } finally {
       setDeletingId(null);
     }

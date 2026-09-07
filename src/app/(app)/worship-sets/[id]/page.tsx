@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchSectionsForSongs,
   saveSections,
+  removeSongFromWorshipSet,
   fetchSongs,
   fetchWorshipSet,
   fetchWorshipSetSongs,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/types";
 import { PreviewPane } from "@/components/PreviewPane";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { useNotifications } from "@/components/Notifications";
 import {
   EditorSection,
   makeSectionKey,
@@ -55,6 +57,7 @@ export default function WorshipSetEditorPage() {
   const setId = params.id;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { notify, requestConfirmation } = useNotifications();
   const [set, setSet] = useState<WorshipSet | null>(null);
   const [items, setItems] = useState<WorshipSetSong[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
@@ -250,12 +253,29 @@ export default function WorshipSetEditorPage() {
     setDragIndex(null);
   }
 
-  function removeSong(songId: string) {
-    setItems((prev) =>
-      prev
-        .filter((item) => item.song_id !== songId)
-        .map((item, song_order) => ({ ...item, song_order })),
-    );
+  async function removeSong(songId: string) {
+    const item = items.find((candidate) => candidate.song_id === songId);
+    if (
+      !(await requestConfirmation({
+        title: "Remove song from worship set?",
+        message: `"${item?.song?.title ?? "This song"}" will remain in Songs.`,
+        confirmLabel: "Remove song",
+      }))
+    )
+      return;
+    try {
+      await removeSongFromWorshipSet(setId, songId);
+      setItems((prev) =>
+        prev
+          .filter((entry) => entry.song_id !== songId)
+          .map((entry, song_order) => ({ ...entry, song_order })),
+      );
+      notify("success", "Song removed from worship set.");
+    } catch (e) {
+      const message = friendlyError(e);
+      setError(message);
+      notify("error", message);
+    }
   }
 
   function openLyricsEditor(songId: string) {

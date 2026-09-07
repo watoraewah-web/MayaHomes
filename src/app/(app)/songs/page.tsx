@@ -41,7 +41,7 @@ import {
 
 export default function SongsPage() {
   const router = useRouter();
-  const { requestConfirmation } = useNotifications();
+  const { notify, requestConfirmation } = useNotifications();
   const [songs, setSongs] = useState<Song[]>([]);
   const [sectionsBySong, setSectionsBySong] = useState<
     Record<string, SongSection[]>
@@ -90,8 +90,10 @@ export default function SongsPage() {
       await deleteSong(song.id);
       setSongs((rows) => rows.filter((s) => s.id !== song.id));
       setSelectedSongIds((ids) => ids.filter((id) => id !== song.id));
+      notify("success", `Deleted "${song.title}".`);
     } catch (e) {
       setActionError(friendlyError(e));
+      notify("error", friendlyError(e));
     }
   }
 

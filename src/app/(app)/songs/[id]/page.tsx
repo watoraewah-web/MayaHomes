@@ -25,6 +25,7 @@ import {
 } from "@/components/SectionCard";
 import { PreviewPane } from "@/components/PreviewPane";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { useNotifications } from "@/components/Notifications";
 import {
   Button,
   Card,
@@ -56,6 +57,7 @@ export default function SongEditorPage() {
   const songId = params.id;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { notify, requestConfirmation } = useNotifications();
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -161,9 +163,38 @@ export default function SongEditorPage() {
     [],
   );
 
-  const deleteSection = useCallback((key: string) => {
-    setSections((prev) => prev.filter((s) => s.key !== key));
-  }, []);
+  const deleteSection = useCallback(
+    async (key: string) => {
+      if (
+        !(await requestConfirmation({
+          title: "Delete section?",
+          message: "This section and its lyrics will be removed from the song.",
+          confirmLabel: "Delete section",
+        }))
+      )
+        return;
+      const next = sections.filter((section) => section.key !== key);
+      setSections(next);
+      if (song) {
+        try {
+          await saveSections(
+            song.id,
+            next.map(({ section_type, section_label, content }) => ({
+              section_type,
+              section_label,
+              content,
+            })),
+          );
+          notify("success", "Section deleted.");
+        } catch (e) {
+          const message = friendlyError(e);
+          setSaveError(message);
+          notify("error", message);
+        }
+      }
+    },
+    [notify, requestConfirmation, sections, song],
+  );
 
   const duplicateSection = useCallback((key: string) => {
     setSections((prev) => {

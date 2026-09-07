@@ -46,7 +46,7 @@ function timeAgo(iso?: string): string {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { requestConfirmation } = useNotifications();
+  const { notify, requestConfirmation } = useNotifications();
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,8 +80,10 @@ export default function DashboardPage() {
     try {
       await deleteSong(song.id);
       setSongs((s) => s.filter((x) => x.id !== song.id));
+      notify("success", `Deleted "${song.title}".`);
     } catch (e) {
       setActionError(friendlyError(e));
+      notify("error", friendlyError(e));
     } finally {
       setDeletingSongId(null);
     }

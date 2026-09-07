@@ -37,7 +37,7 @@ function formatDate(iso?: string) {
 
 export default function WorshipSetsPage() {
   const router = useRouter();
-  const { requestConfirmation } = useNotifications();
+  const { notify, requestConfirmation } = useNotifications();
   const [sets, setSets] = useState<WorshipSet[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -73,8 +73,10 @@ export default function WorshipSetsPage() {
     try {
       await deleteWorshipSet(set.id);
       setSets((prev) => prev.filter((item) => item.id !== set.id));
+      notify("success", `Deleted "${set.name}".`);
     } catch (e) {
       setError(friendlyError(e));
+      notify("error", friendlyError(e));
     } finally {
       setDeletingId(null);
     }

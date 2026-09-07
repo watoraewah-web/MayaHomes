@@ -511,13 +511,14 @@ export function PreviewPane({
       ) : null}
 
       {total > 0 ? (
-        <div className="mt-4 flex max-h-20 gap-1 overflow-x-auto overflow-y-hidden pb-1">
+        <div className="mt-4 flex max-w-full flex-wrap gap-1 overflow-x-auto overflow-y-hidden pb-1">
           {slides.map((s, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => onIndexChange(i)}
               title={`${s.sectionLabel} — slide ${i + 1}`}
-              className={`focus-ring h-8 min-w-8 rounded border px-2 text-[10px] transition-colors ${
+              className={`focus-ring h-5 min-w-5 rounded-sm border px-1 text-[9px] leading-none transition-colors ${
                 i === clamped ? "bg-zinc-900" : "bg-zinc-300 hover:bg-zinc-400"
               }`}
               aria-label={`Go to slide ${i + 1}`}

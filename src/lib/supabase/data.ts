@@ -113,6 +113,14 @@ export async function updateSong(
 
 export async function deleteSong(songId: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
+  for (const table of [
+    "song_sections",
+    "presentations",
+    "worship_set_songs",
+  ] as const) {
+    const { error } = await supabase.from(table).delete().eq("song_id", songId);
+    if (error) throw new Error(friendlyError(error));
+  }
   const { error } = await supabase.from("songs").delete().eq("id", songId);
   if (error) throw new Error(friendlyError(error));
 }
@@ -157,7 +165,11 @@ export async function saveSections(
   sections: ParsedSection[],
 ): Promise<SongSection[]> {
   const supabase = getSupabaseBrowserClient();
-  await supabase.from("song_sections").delete().eq("song_id", songId);
+  const { error: deleteError } = await supabase
+    .from("song_sections")
+    .delete()
+    .eq("song_id", songId);
+  if (deleteError) throw new Error(friendlyError(deleteError));
   const rows = sections.map((s, i) => ({
     song_id: songId,
     section_type: s.section_type,
@@ -331,7 +343,25 @@ export async function updateWorshipSet(
 
 export async function deleteWorshipSet(id: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
+  const { error: songsError } = await supabase
+    .from("worship_set_songs")
+    .delete()
+    .eq("worship_set_id", id);
+  if (songsError) throw new Error(friendlyError(songsError));
   const { error } = await supabase.from("worship_sets").delete().eq("id", id);
+  if (error) throw new Error(friendlyError(error));
+}
+
+export async function removeSongFromWorshipSet(
+  worshipSetId: string,
+  songId: string,
+): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from("worship_set_songs")
+    .delete()
+    .eq("worship_set_id", worshipSetId)
+    .eq("song_id", songId);
   if (error) throw new Error(friendlyError(error));
 }
 
