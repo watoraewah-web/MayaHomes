@@ -1,13 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   PresentationSettings,
   TextAlignment,
   VerticalPosition,
 } from "@/lib/types";
-import { uploadBackgroundAsset, friendlyError } from "@/lib/supabase/data";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { friendlyError } from "@/lib/supabase/data";
 import { Button, ErrorMessage, Input, Label, Select } from "@/components/ui";
 import { ImageIcon, UploadIcon } from "@/components/icons";
 
@@ -20,6 +19,13 @@ const FONT_FAMILIES = [
   "Times New Roman",
   "Trebuchet MS",
   "Verdana",
+  "Aptos",
+  "Century Gothic",
+  "Garamond",
+  "Gill Sans",
+  "Palatino Linotype",
+  "Book Antiqua",
+  "Cambria",
 ];
 
 function SegmentedControl<T extends string>({
@@ -85,19 +91,23 @@ export function SettingsPanel({
   const [uploading, setUploading] = useState<"image" | "video" | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const mediaUrlRef = useRef<string | null>(null);
+
+  useEffect(
+    () => () => {
+      if (mediaUrlRef.current) URL.revokeObjectURL(mediaUrlRef.current);
+    },
+    [],
+  );
 
   async function handleUpload(kind: "image" | "video", file: File | undefined) {
     if (!file) return;
     setUploadError(null);
     setUploading(kind);
     try {
-      const supabase = getSupabaseBrowserClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user)
-        throw new Error("Your session has expired. Please sign in again.");
-      const url = await uploadBackgroundAsset(user.id, file, kind);
+      const url = URL.createObjectURL(file);
+      if (mediaUrlRef.current) URL.revokeObjectURL(mediaUrlRef.current);
+      mediaUrlRef.current = url;
       onChange(
         kind === "image"
           ? { backgroundType: "image", backgroundImageUrl: url }
@@ -110,6 +120,10 @@ export function SettingsPanel({
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
     }
+  }
+
+  function handleTextColorChange(color: string) {
+    onChange({ textColor: color });
   }
 
   return (
@@ -194,6 +208,31 @@ export function SettingsPanel({
             ]}
             onChange={(v) => onChange({ fontWeight: v })}
           />
+        </div>
+        <div>
+          <Label htmlFor="text-color">Text color</Label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              id="text-color"
+              type="color"
+              value={settings.textColor}
+              onChange={(e) => handleTextColorChange(e.target.value)}
+              className="focus-ring h-8 w-12 cursor-pointer rounded border border-zinc-300 bg-white p-0.5"
+              aria-label="Text color"
+            />
+            {["#ffffff", "#000000", "#facc15", "#38bdf8", "#f87171"].map(
+              (color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => handleTextColorChange(color)}
+                  className="focus-ring h-6 w-6 rounded border border-zinc-300"
+                  style={{ backgroundColor: color }}
+                  aria-label={`Set text color ${color}`}
+                />
+              ),
+            )}
+          </div>
         </div>
         <div>
           <Label>Text alignment</Label>

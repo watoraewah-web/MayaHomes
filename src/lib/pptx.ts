@@ -1,5 +1,5 @@
 import PptxGenJS from "pptxgenjs";
-import { PresentationSettings, readableTextColor } from "./types";
+import { PresentationSettings } from "./types";
 import {
   Slide,
   slideSizePx,
@@ -136,8 +136,8 @@ async function writePowerPoint({
   // neutral dark background so exported slides remain usable.
   const exportBgColor =
     settings.backgroundType === "video" ? "#111111" : settings.backgroundColor;
-  const textColor = readableTextColor(exportBgColor);
-  const labelColor = textColor === "#ffffff" ? "A6A6A6" : "595959";
+  const textColor = settings.textColor.replace("#", "");
+  const labelColor = textColor;
   const dateLabel = sundayDateLabel();
 
   const labelHeightPx = settings.showSectionLabel

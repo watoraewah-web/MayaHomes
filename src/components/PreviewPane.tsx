@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PresentationSettings, readableTextColor } from "@/lib/types";
+import { PresentationSettings } from "@/lib/types";
 import {
   Slide,
   slideSizePx,
@@ -63,16 +63,9 @@ function SlideSurface({
   const pad = slidePaddingPx(settings.aspectRatio);
   const scale = containerWidth ? containerWidth / W : 0;
 
-  const useMedia = settings.backgroundType !== "solid";
-  const textColor = useMedia
-    ? "#ffffff"
-    : readableTextColor(settings.backgroundColor);
-  const labelColor = useMedia
-    ? "rgba(255,255,255,0.72)"
-    : textColor === "#ffffff"
-      ? "rgba(255,255,255,0.62)"
-      : "rgba(0,0,0,0.45)";
-  const textShadow = useMedia ? "0 1px 6px rgba(0,0,0,0.7)" : undefined;
+  const textColor = settings.textColor;
+  const labelColor = textColor;
+  const textShadow = undefined;
 
   const alignClass =
     settings.textAlign === "left"

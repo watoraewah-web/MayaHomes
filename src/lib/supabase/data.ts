@@ -23,7 +23,6 @@ export function friendlyError(err: unknown): string {
   }
   return "Something went wrong. Please try again.";
 }
-
 /* ------------------------------- profile -------------------------------- */
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
@@ -236,10 +235,15 @@ export async function upsertPresentation(
   if (!user) throw new Error("Your session has expired. Please sign in again.");
 
   const existing = await fetchPresentationForSong(songId);
+  const persistentSettings = {
+    ...settings,
+    backgroundImageUrl: null,
+    backgroundVideoUrl: null,
+  };
   if (existing) {
     const { data, error } = await supabase
       .from("presentations")
-      .update({ settings })
+      .update({ settings: persistentSettings })
       .eq("id", existing.id)
       .select()
       .single();
@@ -248,7 +252,7 @@ export async function upsertPresentation(
   }
   const { data, error } = await supabase
     .from("presentations")
-    .insert({ user_id: user.id, song_id: songId, settings })
+    .insert({ user_id: user.id, song_id: songId, settings: persistentSettings })
     .select()
     .single();
   if (error) throw new Error(friendlyError(error));
@@ -334,9 +338,19 @@ export async function updateWorshipSet(
   >,
 ): Promise<void> {
   const supabase = getSupabaseBrowserClient();
+  const persistentPatch = patch.settings
+    ? {
+        ...patch,
+        settings: {
+          ...patch.settings,
+          backgroundImageUrl: null,
+          backgroundVideoUrl: null,
+        },
+      }
+    : patch;
   const { error } = await supabase
     .from("worship_sets")
-    .update(patch)
+    .update(persistentPatch)
     .eq("id", id);
   if (error) throw new Error(friendlyError(error));
 }
@@ -425,24 +439,4 @@ export async function loadSongWorkspace(songId: string): Promise<{
     sections,
     settings: presentation?.settings ?? DEFAULT_SETTINGS,
   };
-}
-
-/* -------------------------------- storage ------------------------------- */
-
-export async function uploadBackgroundAsset(
-  userId: string,
-  file: File,
-  kind: "image" | "video",
-): Promise<string> {
-  const supabase = getSupabaseBrowserClient();
-  const ext = file.name.includes(".")
-    ? file.name.split(".").pop()!.toLowerCase()
-    : "bin";
-  const path = `${userId}/backgrounds/${kind}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage
-    .from("maya-assets")
-    .upload(path, file, { cacheControl: "3600", upsert: false });
-  if (error) throw new Error(friendlyError(error));
-  const { data } = supabase.storage.from("maya-assets").getPublicUrl(path);
-  return data.publicUrl;
 }

@@ -90,6 +90,7 @@ export interface PresentationSettings {
   aspectRatio: AspectRatio;
   fontFamily: string;
   fontSize: number;
+  textColor: string;
   fontWeight: "normal" | "bold";
   textAlign: TextAlignment;
   verticalPosition: VerticalPosition;
@@ -105,6 +106,7 @@ export const DEFAULT_SETTINGS: PresentationSettings = {
   aspectRatio: "16:9",
   fontFamily: "Arial",
   fontSize: 36,
+  textColor: "#ffffff",
   fontWeight: "normal",
   textAlign: "center",
   verticalPosition: "center",
@@ -121,6 +123,12 @@ export function normalizeSettings(raw: unknown): PresentationSettings {
   return {
     ...DEFAULT_SETTINGS,
     ...s,
+    backgroundImageUrl: null,
+    backgroundVideoUrl: null,
+    textColor:
+      typeof s.textColor === "string" && /^#[0-9a-f]{6}$/i.test(s.textColor)
+        ? s.textColor
+        : DEFAULT_SETTINGS.textColor,
     fontSize:
       typeof s.fontSize === "number" && s.fontSize >= 10 && s.fontSize <= 96
         ? s.fontSize
