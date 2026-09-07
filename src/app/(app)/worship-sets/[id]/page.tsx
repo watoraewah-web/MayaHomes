@@ -25,6 +25,12 @@ import {
 import { PreviewPane } from "@/components/PreviewPane";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import {
+  EditorSection,
+  makeSectionKey,
+  SectionCard,
+  toEditorSections,
+} from "@/components/SectionCard";
+import {
   Button,
   Card,
   ErrorMessage,
@@ -68,6 +74,13 @@ export default function WorshipSetEditorPage() {
   const [addingSongId, setAddingSongId] = useState<string | null>(null);
   const [operationStatus, setOperationStatus] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [editingSongId, setEditingSongId] = useState<string | null>(null);
+  const [lyricsDrafts, setLyricsDrafts] = useState<
+    Record<string, EditorSection[]>
+  >({});
+  const [lyricsSaveState, setLyricsSaveState] = useState<
+    Record<string, "saved" | "saving" | "error">
+  >({});
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loaded = useRef(false);
   const addedReturnSong = useRef(false);
@@ -75,6 +88,10 @@ export default function WorshipSetEditorPage() {
   const songSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>(
     {},
   );
+  const lyricsSaveTimers = useRef<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
+  const lyricsSaveVersions = useRef<Record<string, number>>({});
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
 
@@ -239,6 +256,107 @@ export default function WorshipSetEditorPage() {
         .filter((item) => item.song_id !== songId)
         .map((item, song_order) => ({ ...item, song_order })),
     );
+  }
+
+  function openLyricsEditor(songId: string) {
+    setEditingSongId(songId);
+    setLyricsDrafts((prev) => ({
+      ...prev,
+      [songId]: toEditorSections(sections[songId] ?? []),
+    }));
+    setLyricsSaveState((prev) => ({ ...prev, [songId]: "saved" }));
+  }
+
+  function closeLyricsEditor(songId: string) {
+    if (lyricsSaveTimers.current[songId]) {
+      clearTimeout(lyricsSaveTimers.current[songId]);
+      delete lyricsSaveTimers.current[songId];
+    }
+    setLyricsDrafts((prev) => {
+      const next = { ...prev };
+      delete next[songId];
+      return next;
+    });
+    setEditingSongId(null);
+  }
+
+  function updateLyricsDraft(songId: string, draft: EditorSection[]) {
+    const version = (lyricsSaveVersions.current[songId] ?? 0) + 1;
+    lyricsSaveVersions.current[songId] = version;
+    setLyricsDrafts((prev) => ({ ...prev, [songId]: draft }));
+    setSections((prev) => ({
+      ...prev,
+      [songId]: draft.map((section, section_order) => ({
+        id: section.key,
+        song_id: songId,
+        section_type: section.section_type,
+        section_label: section.section_label,
+        content: section.content,
+        section_order,
+      })),
+    }));
+    setLyricsSaveState((prev) => ({ ...prev, [songId]: "saving" }));
+    if (lyricsSaveTimers.current[songId])
+      clearTimeout(lyricsSaveTimers.current[songId]);
+    lyricsSaveTimers.current[songId] = setTimeout(async () => {
+      try {
+        const saved = await saveSections(
+          songId,
+          draft.map(({ section_type, section_label, content }) => ({
+            section_type,
+            section_label,
+            content,
+          })),
+        );
+        if (lyricsSaveVersions.current[songId] !== version) return;
+        setSections((prev) => ({ ...prev, [songId]: saved }));
+        setLyricsDrafts((prev) => ({
+          ...prev,
+          [songId]: toEditorSections(saved),
+        }));
+        setLyricsSaveState((prev) => ({ ...prev, [songId]: "saved" }));
+      } catch (e) {
+        if (lyricsSaveVersions.current[songId] !== version) return;
+        setError(friendlyError(e));
+        setLyricsSaveState((prev) => ({ ...prev, [songId]: "error" }));
+      }
+    }, 700);
+  }
+
+  function patchLyricsSection(
+    songId: string,
+    key: string,
+    patch: Partial<EditorSection>,
+  ) {
+    const draft = lyricsDrafts[songId] ?? [];
+    updateLyricsDraft(
+      songId,
+      draft.map((section) =>
+        section.key === key ? { ...section, ...patch } : section,
+      ),
+    );
+  }
+
+  function moveLyricsSection(songId: string, key: string, direction: -1 | 1) {
+    const draft = lyricsDrafts[songId] ?? [];
+    const index = draft.findIndex((section) => section.key === key);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= draft.length) return;
+    const next = [...draft];
+    [next[index], next[target]] = [next[target], next[index]];
+    updateLyricsDraft(songId, next);
+  }
+
+  function addLyricsSection(songId: string) {
+    updateLyricsDraft(songId, [
+      ...(lyricsDrafts[songId] ?? []),
+      {
+        key: makeSectionKey(),
+        section_type: "verse",
+        section_label: "Verse",
+        content: "",
+      },
+    ]);
   }
 
   function editPreviewSlide(slide: Slide, text: string) {
@@ -428,56 +546,145 @@ export default function WorshipSetEditorPage() {
             </Card>
           ) : (
             <Card className="divide-y divide-zinc-100">
-              {items.map((item, index) => (
-                <div
-                  key={item.song_id}
-                  draggable
-                  onDragStart={() => setDragIndex(index)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => dropItem(index)}
-                  className="flex cursor-grab items-center gap-3 px-4 py-3 active:cursor-grabbing"
-                >
-                  <span className="w-7 text-xs font-semibold text-zinc-400">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-zinc-900">
-                      {item.song?.title}
-                    </p>
-                    <p className="truncate text-xs text-zinc-500">
-                      {item.song?.artist || "No artist"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<ChevronUpIcon />}
-                      disabled={index === 0}
-                      onClick={() => moveItem(index, -1)}
-                      aria-label={`Move ${item.song?.title} up`}
-                    />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<ChevronDownIcon />}
-                      disabled={index === items.length - 1}
-                      onClick={() => moveItem(index, 1)}
-                      aria-label={`Move ${item.song?.title} down`}
-                    />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<DeleteIcon />}
-                      className="text-zinc-500 hover:text-red-600"
-                      onClick={() => removeSong(item.song_id)}
-                      aria-label={`Remove ${item.song?.title}`}
+              {items.map((item, index) => {
+                const songId = item.song_id;
+                const draft = lyricsDrafts[songId] ?? [];
+                const isEditing = editingSongId === songId;
+                const lyricStatus = lyricsSaveState[songId] ?? "saved";
+                return (
+                  <div key={songId} className="min-w-0">
+                    <div
+                      draggable
+                      onDragStart={() => setDragIndex(index)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => dropItem(index)}
+                      className="flex min-w-0 flex-wrap items-center gap-3 px-4 py-3 active:cursor-grabbing"
                     >
-                      Remove
-                    </Button>
+                      <span className="w-7 shrink-0 text-xs font-semibold text-zinc-400">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className="min-w-0 flex-1 basis-40">
+                        <p className="break-words text-sm font-medium text-zinc-900">
+                          {item.song?.title}
+                        </p>
+                        <p className="break-words text-xs text-zinc-500">
+                          {item.song?.artist || "No artist"}
+                        </p>
+                      </div>
+                      <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant={isEditing ? "primary" : "ghost"}
+                          onClick={() =>
+                            isEditing
+                              ? closeLyricsEditor(songId)
+                              : openLyricsEditor(songId)
+                          }
+                        >
+                          {isEditing ? "Done" : "Edit Lyrics"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<ChevronUpIcon />}
+                          disabled={index === 0}
+                          onClick={() => moveItem(index, -1)}
+                          aria-label={`Move ${item.song?.title} up`}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<ChevronDownIcon />}
+                          disabled={index === items.length - 1}
+                          onClick={() => moveItem(index, 1)}
+                          aria-label={`Move ${item.song?.title} down`}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<DeleteIcon />}
+                          className="text-zinc-500 hover:text-red-600"
+                          onClick={() => removeSong(songId)}
+                          aria-label={`Remove ${item.song?.title}`}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                    {isEditing ? (
+                      <div className="border-t border-zinc-100 bg-zinc-50/40 px-3 py-3 sm:px-4">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                            Lyrics Editor
+                          </p>
+                          <span className="text-xs text-zinc-400" role="status">
+                            {lyricStatus === "saving"
+                              ? "Saving..."
+                              : lyricStatus === "error"
+                                ? "Save failed"
+                                : "Saved"}
+                          </span>
+                        </div>
+                        <div className="min-w-0 space-y-3">
+                          {draft.map((section, sectionIndex) => (
+                            <SectionCard
+                              key={section.key}
+                              index={sectionIndex}
+                              total={draft.length}
+                              section={section}
+                              onChange={(patch) =>
+                                patchLyricsSection(songId, section.key, patch)
+                              }
+                              onDelete={() =>
+                                updateLyricsDraft(
+                                  songId,
+                                  draft.filter(
+                                    (candidate) =>
+                                      candidate.key !== section.key,
+                                  ),
+                                )
+                              }
+                              onDuplicate={() => {
+                                const copy = {
+                                  ...section,
+                                  key: makeSectionKey(),
+                                };
+                                const next = [...draft];
+                                next.splice(sectionIndex + 1, 0, copy);
+                                updateLyricsDraft(songId, next);
+                              }}
+                              onMove={(direction) =>
+                                moveLyricsSection(
+                                  songId,
+                                  section.key,
+                                  direction,
+                                )
+                              }
+                            />
+                          ))}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            icon={<PlusIcon />}
+                            onClick={() => addLyricsSection(songId)}
+                          >
+                            Add Section
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => closeLyricsEditor(songId)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </Card>
           )}
           {items.length > 0 ? (

@@ -74,7 +74,7 @@ export async function fetchSong(songId: string): Promise<Song | null> {
 
 export async function createSong(input: {
   title: string;
-  artist: string;
+  artist?: string;
   rawLyrics: string;
   parsed: ParsedSection[];
 }): Promise<{ song: Song; sections: SongSection[] }> {

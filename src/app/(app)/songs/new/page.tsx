@@ -26,7 +26,6 @@ export default function NewSongPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -59,7 +58,6 @@ export default function NewSongPage() {
       setProcessingMessage("Saving song and organized sections...");
       const { song } = await createSong({
         title: title.trim(),
-        artist: artist.trim(),
         rawLyrics: lyrics,
         parsed,
       });
@@ -88,7 +86,7 @@ export default function NewSongPage() {
       </div>
 
       <Card className="p-6">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div>
           <div>
             <Label htmlFor="title">Song Title</Label>
             <Input
@@ -96,16 +94,6 @@ export default function NewSongPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Amazing Grace"
-              maxLength={200}
-            />
-          </div>
-          <div>
-            <Label htmlFor="artist">Artist</Label>
-            <Input
-              id="artist"
-              value={artist}
-              onChange={(e) => setArtist(e.target.value)}
-              placeholder="John Newton"
               maxLength={200}
             />
           </div>
@@ -152,7 +140,6 @@ export default function NewSongPage() {
             type="button"
             onClick={() => {
               setTitle("Amazing Grace");
-              setArtist("John Newton");
               setLyrics(EXAMPLE_LYRICS);
             }}
             className="focus-ring text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-600 hover:underline"

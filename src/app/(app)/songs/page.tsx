@@ -8,6 +8,8 @@ import {
   fetchSongs,
   fetchSectionsForSongs,
   fetchPresentationForSong,
+  createWorshipSet,
+  saveWorshipSetSongs,
   friendlyError,
 } from "@/lib/supabase/data";
 import {
@@ -47,6 +49,8 @@ export default function SongsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [busySongId, setBusySongId] = useState<string | null>(null);
+  const [selectedSongIds, setSelectedSongIds] = useState<string[]>([]);
+  const [creatingSet, setCreatingSet] = useState(false);
 
   useEffect(() => {
     fetchSongs()
@@ -81,8 +85,41 @@ export default function SongsPage() {
     try {
       await deleteSong(song.id);
       setSongs((rows) => rows.filter((s) => s.id !== song.id));
+      setSelectedSongIds((ids) => ids.filter((id) => id !== song.id));
     } catch (e) {
       setActionError(friendlyError(e));
+    }
+  }
+
+  function toggleSongSelection(songId: string) {
+    setSelectedSongIds((ids) =>
+      ids.includes(songId)
+        ? ids.filter((id) => id !== songId)
+        : [...ids, songId],
+    );
+  }
+
+  function toggleAllSongs() {
+    setSelectedSongIds((ids) =>
+      ids.length === songs.length ? [] : songs.map((song) => song.id),
+    );
+  }
+
+  async function handleAddSelectedToWorshipSet() {
+    if (selectedSongIds.length === 0 || creatingSet) return;
+    setCreatingSet(true);
+    setActionError(null);
+    try {
+      const set = await createWorshipSet("Sunday Worship");
+      const selectedInSongOrder = songs
+        .filter((song) => selectedSongIds.includes(song.id))
+        .map((song) => song.id);
+      await saveWorshipSetSongs(set.id, selectedInSongOrder);
+      setSelectedSongIds([]);
+      router.replace(`/worship-sets/${set.id}`);
+    } catch (e) {
+      setActionError(friendlyError(e));
+      setCreatingSet(false);
     }
   }
 
@@ -149,6 +186,36 @@ export default function SongsPage() {
         />
       </div>
 
+      <div className="mb-5 flex flex-wrap items-center gap-3 rounded-md border border-zinc-200 bg-white px-4 py-3 shadow-card">
+        <label className="flex min-h-9 items-center gap-2 text-sm font-medium text-zinc-700">
+          <input
+            type="checkbox"
+            checked={
+              songs.length > 0 && selectedSongIds.length === songs.length
+            }
+            onChange={toggleAllSongs}
+            disabled={songs.length === 0 || creatingSet}
+            className="h-4 w-4 rounded border-zinc-300 accent-zinc-900"
+            aria-label="Select all songs"
+          />
+          Select All
+        </label>
+        <span className="text-sm text-zinc-500">
+          {selectedSongIds.length} song{selectedSongIds.length === 1 ? "" : "s"}{" "}
+          selected
+        </span>
+        <Button
+          size="sm"
+          variant="primary"
+          loading={creatingSet}
+          disabled={selectedSongIds.length === 0 || creatingSet}
+          onClick={handleAddSelectedToWorshipSet}
+          className="ml-auto"
+        >
+          {creatingSet ? "Creating Worship Set..." : "Add to Worship Set"}
+        </Button>
+      </div>
+
       {error ? <ErrorMessage>{error}</ErrorMessage> : null}
       {actionError ? (
         <div className="mb-4">
@@ -186,9 +253,17 @@ export default function SongsPage() {
             return (
               <div
                 key={song.id}
-                className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                className={`flex min-w-0 flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${selectedSongIds.includes(song.id) ? "bg-zinc-50" : ""}`}
               >
                 <div className="flex min-w-0 items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedSongIds.includes(song.id)}
+                    onChange={() => toggleSongSelection(song.id)}
+                    disabled={creatingSet}
+                    className="mt-2 h-4 w-4 shrink-0 rounded border-zinc-300 accent-zinc-900"
+                    aria-label={`Select ${song.title}`}
+                  />
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-zinc-400">
                     <FileIcon width={15} height={15} />
                   </span>

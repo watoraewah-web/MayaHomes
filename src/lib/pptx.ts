@@ -73,6 +73,17 @@ function safeFilePart(value: string): string {
   return value.trim().replace(/[/\\:*?"<>|]/g, "-") || "Untitled";
 }
 
+function sundayDateLabel(): string | null {
+  const now = new Date();
+  return now.getDay() === 0
+    ? now.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
+}
+
 async function writePowerPoint({
   title,
   author,
@@ -127,12 +138,13 @@ async function writePowerPoint({
     settings.backgroundType === "video" ? "#111111" : settings.backgroundColor;
   const textColor = readableTextColor(exportBgColor);
   const labelColor = textColor === "#ffffff" ? "A6A6A6" : "595959";
+  const dateLabel = sundayDateLabel();
 
   const labelHeightPx = settings.showSectionLabel
     ? ptToPx(12) * LINE_HEIGHT + 16
     : 0;
 
-  for (const slide of slides) {
+  for (const [slideIndex, slide] of slides.entries()) {
     const s = pptx.addSlide();
     s.background = bgDataUrl
       ? { data: bgDataUrl }
@@ -170,6 +182,19 @@ async function writePowerPoint({
       color: textColor,
       lineSpacingMultiple: LINE_HEIGHT,
     });
+
+    if (slideIndex === 0 && dateLabel) {
+      s.addText(dateLabel, {
+        x: toIn(pad.x),
+        y: toIn(Hpx - pad.y - ptToPx(12)),
+        w: toIn(Wpx - pad.x * 2),
+        h: toIn(ptToPx(12)),
+        align: settings.textAlign,
+        fontFace: settings.fontFamily,
+        fontSize: 12,
+        color: labelColor,
+      });
+    }
   }
 
   await pptx.writeFile({ fileName });

@@ -385,12 +385,12 @@ export function PreviewPane({
               const value = event.target.value;
               setFontSizeInput(value);
               const parsed = Number(value);
-              if (
-                value.trim() &&
-                Number.isFinite(parsed) &&
-                parsed >= 14 &&
-                parsed <= 72
-              )
+              if (Number.isFinite(parsed) && parsed >= 72) {
+                setFontSizeInput("72");
+                onSettingsChange?.({ fontSize: 72 });
+                return;
+              }
+              if (value.trim() && Number.isFinite(parsed) && parsed >= 14)
                 onSettingsChange?.({ fontSize: parsed });
             }}
             onBlur={() => {
@@ -404,6 +404,7 @@ export function PreviewPane({
             className="focus-ring h-8 w-16 rounded-md border border-zinc-300 px-2 text-xs"
             aria-label="Preview font size"
           />
+          <span className="text-zinc-400">Maximum font size is 72.</span>
           <Button
             size="sm"
             variant={settings.fontWeight === "bold" ? "primary" : "secondary"}
