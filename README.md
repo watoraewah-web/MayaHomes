@@ -1,9 +1,10 @@
-# MAYA
+# Warrior of Faith International Christian Ministry
 
 **Turn worship lyrics into presentation-ready slides.**
 
-MAYA is a church worship song lyrics-to-PowerPoint generator. Paste song lyrics,
-let MAYA automatically organize them into sections (Verse, Chorus, Bridge,
+Warrior of Faith International Christian Ministry is a church worship song
+lyrics-to-PowerPoint generator. Paste song lyrics, let Warrior of Faith
+International Christian Ministry automatically organize them into sections (Verse, Chorus, Bridge,
 Pre-Chorus, Intro, Outro, Tag, Refrain, ...), edit the detected structure,
 preview the presentation, and generate a real `.pptx` file.
 
@@ -54,7 +55,7 @@ Open http://localhost:3000. For a production build: `npm run build && npm start`
 ## The workflow
 
 1. **Sign up / Sign in** — email + password authentication via Supabase Auth.
-2. **Dashboard** — "Welcome to MAYA", Create New Song, recent songs with
+2. **Dashboard** — "Welcome to Warrior of Faith International Christian Ministry", Create New Song, recent songs with
    Edit / Present / Generate PowerPoint / Delete actions.
 3. **Create Song** — enter title + artist, paste the complete lyrics, click
    **Analyze Lyrics**.
@@ -76,7 +77,7 @@ Open http://localhost:3000. For a production build: `npm run build && npm start`
    a dark solid background for video because `.pptx` does not support video
    backgrounds. Media is not uploaded or persisted to Supabase Storage.
 8. **Generate PowerPoint** — produces a real, fully formatted `.pptx` named
-   `MAYA - [Song Title].pptx` and downloads it.
+   `WFICM - [Song Title].pptx` and downloads it.
 
 ## Data model
 
@@ -139,6 +140,6 @@ npm test
 
 ## Copyright note
 
-MAYA treats lyrics strictly as user-provided content. It does not scrape or
+Warrior of Faith International Christian Ministry treats lyrics strictly as user-provided content. It does not scrape or
 fetch lyrics from third-party sources. Only paste lyrics you are authorized
 to use.

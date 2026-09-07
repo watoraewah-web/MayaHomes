@@ -39,7 +39,7 @@ export interface GenerateWorshipSetOptions {
 /**
  * Builds a real .pptx file from the shared slide model (the exact same model
  * the preview renders) and triggers a browser download named
- * "MAYA - [Song Title].pptx".
+ * "WFICM - [Song Title].pptx".
  */
 export async function generatePowerPoint({
   songTitle,
@@ -52,7 +52,7 @@ export async function generatePowerPoint({
     author: artist,
     slides,
     settings,
-    fileName: `MAYA - ${safeFilePart(songTitle)}.pptx`,
+    fileName: `WFICM - ${safeFilePart(songTitle)}.pptx`,
   });
 }
 
@@ -65,7 +65,7 @@ export async function generateWorshipSetPowerPoint({
     title: setTitle,
     slides,
     settings,
-    fileName: `MAYA - ${safeFilePart(setTitle)}.pptx`,
+    fileName: `WFICM - ${safeFilePart(setTitle)}.pptx`,
   });
 }
 

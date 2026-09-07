@@ -119,7 +119,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-          Welcome to Warrior of Faith International Christian Ministry
+          Welcome to WFICM
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
           Create worship presentations from your song lyrics.
@@ -165,7 +165,7 @@ export default function DashboardPage() {
           <EmptyState
             icon={<SongsIcon width={20} height={20} />}
             title="No songs yet"
-            description="Create your first song by pasting its lyrics. Warrior of Faith International Christian Ministry will detect the sections and build the slides for you."
+            description="Create your first song by pasting its lyrics. WFICM will detect the sections and build the slides for you."
             action={
               <Button
                 variant="primary"

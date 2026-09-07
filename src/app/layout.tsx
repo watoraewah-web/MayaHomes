@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { NotificationProvider } from "@/components/Notifications";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title:
-    "Warrior of Faith International Christian Ministry — Worship Lyrics to PowerPoint",
+  title: "WFICM — Worship Lyrics to PowerPoint",
   description:
     "Organize your song lyrics, preview your presentation, and generate a PowerPoint for your worship service.",
 };
@@ -15,9 +15,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <NotificationProvider>{children}</NotificationProvider>
+        <ThemeProvider>
+          <NotificationProvider>{children}</NotificationProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

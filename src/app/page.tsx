@@ -5,7 +5,7 @@ const features = [
   {
     title: "Parse",
     description:
-      "Paste raw lyrics. Warrior of Faith International Christian Ministry detects verses, choruses, bridges, and more automatically.",
+      "Paste raw lyrics. WFICM detects verses, choruses, bridges, and more automatically.",
     path: "M9 18V5l12-2v13M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm12-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
   },
   {
@@ -30,7 +30,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2.5">
             <MayaMark className="text-zinc-900" />
             <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
-              Warrior of Faith International Christian Ministry
+              WFICM
             </span>
           </div>
           <Link
@@ -48,7 +48,7 @@ export default function LandingPage() {
             Worship Presentation Tool
           </p>
           <h1 className="text-5xl font-semibold tracking-tight text-zinc-900 md:text-6xl">
-            Warrior of Faith International Christian Ministry
+            WFICM
           </h1>
           <p className="mt-5 max-w-xl text-lg text-zinc-600 md:text-xl">
             Turn worship lyrics into presentation-ready slides.
@@ -102,7 +102,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-zinc-200 bg-white">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6 text-xs text-zinc-400">
-          <span>Warrior of Faith International Christian Ministry · WFICM</span>
+          <span>WFICM</span>
           <span>Lyrics are treated as user-provided content.</span>
         </div>
       </footer>

@@ -18,8 +18,10 @@ import {
   SuccessMessage,
 } from "@/components/ui";
 import { UserIcon } from "@/components/icons";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -128,6 +130,32 @@ export default function SettingsPage() {
             </Button>
           </div>
         </form>
+      </Card>
+
+      <Card className="mt-4 p-6">
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Appearance</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Choose the theme for the website.
+          </p>
+        </div>
+        <div className="mt-4 flex gap-2" role="group" aria-label="Theme">
+          {(["light", "dark"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={theme === option}
+              onClick={() => setTheme(option)}
+              className={`focus-ring rounded-md border px-3 py-2 text-sm font-medium capitalize transition-colors ${
+                theme === option
+                  ? "border-zinc-900 bg-zinc-900 text-white"
+                  : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
       </Card>
 
       <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-5 text-xs leading-relaxed text-zinc-400 shadow-card">
