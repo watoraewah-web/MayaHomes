@@ -8,6 +8,7 @@ import {
   friendlyError,
 } from "@/lib/supabase/data";
 import { Presentation, Song } from "@/lib/types";
+import { useNotifications } from "@/components/Notifications";
 import {
   Button,
   Card,
@@ -24,7 +25,10 @@ import {
 
 export default function PresentationsPage() {
   const router = useRouter();
-  const [items, setItems] = useState<(Presentation & { song: Song | null })[]>([]);
+  const { requestConfirmation } = useNotifications();
+  const [items, setItems] = useState<(Presentation & { song: Song | null })[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -37,7 +41,14 @@ export default function PresentationsPage() {
   }, []);
 
   async function handleDelete(id: string) {
-    if (!window.confirm("Delete this presentation? The song itself is not affected.")) return;
+    if (
+      !(await requestConfirmation({
+        title: "Delete presentation?",
+        message: "The song itself will not be affected.",
+        confirmLabel: "Delete presentation",
+      }))
+    )
+      return;
     setDeletingId(id);
     try {
       await deletePresentation(id);
@@ -55,7 +66,9 @@ export default function PresentationsPage() {
       `${s.aspectRatio}`,
       `${s.fontSize}pt ${s.fontFamily}`,
       `${s.textAlign} aligned`,
-      s.backgroundType === "solid" ? "solid background" : `${s.backgroundType} background`,
+      s.backgroundType === "solid"
+        ? "solid background"
+        : `${s.backgroundType} background`,
     ];
     return parts.join(" · ");
   }
@@ -63,10 +76,12 @@ export default function PresentationsPage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Presentations</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          Presentations
+        </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Saved presentation settings. A presentation is created the first time you
-          generate a PowerPoint for a song.
+          Saved presentation settings. A presentation is created the first time
+          you generate a PowerPoint for a song.
         </p>
       </div>
 
@@ -100,7 +115,9 @@ export default function PresentationsPage() {
                   <p className="truncate text-sm font-medium text-zinc-900">
                     {p.song?.title ?? "Unknown song"}
                   </p>
-                  <p className="mt-0.5 truncate text-xs text-zinc-500">{describe(p)}</p>
+                  <p className="mt-0.5 truncate text-xs text-zinc-500">
+                    {describe(p)}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">

@@ -13,6 +13,7 @@ import { Song, WorshipSet } from "@/lib/types";
 import { buildSlides } from "@/lib/slides";
 import { DEFAULT_SETTINGS, normalizeSettings } from "@/lib/types";
 import { fetchPresentationForSong } from "@/lib/supabase/data";
+import { useNotifications } from "@/components/Notifications";
 import {
   Button,
   Card,
@@ -45,6 +46,7 @@ function timeAgo(iso?: string): string {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { requestConfirmation } = useNotifications();
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,9 +67,11 @@ export default function DashboardPage() {
 
   async function handleDelete(song: Song) {
     if (
-      !window.confirm(
-        `Delete "${song.title}" and all of its sections? This cannot be undone.`,
-      )
+      !(await requestConfirmation({
+        title: "Delete song?",
+        message: `Delete "${song.title}" and all of its sections? This cannot be undone.`,
+        confirmLabel: "Delete song",
+      }))
     ) {
       return;
     }

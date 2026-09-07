@@ -19,6 +19,7 @@ import {
   normalizeSettings,
 } from "@/lib/types";
 import { buildSlides } from "@/lib/slides";
+import { useNotifications } from "@/components/Notifications";
 import {
   Button,
   Card,
@@ -40,6 +41,7 @@ import {
 
 export default function SongsPage() {
   const router = useRouter();
+  const { requestConfirmation } = useNotifications();
   const [songs, setSongs] = useState<Song[]>([]);
   const [sectionsBySong, setSectionsBySong] = useState<
     Record<string, SongSection[]>
@@ -76,9 +78,11 @@ export default function SongsPage() {
 
   async function handleDelete(song: Song) {
     if (
-      !window.confirm(
-        `Delete "${song.title}" and all of its sections? This cannot be undone.`,
-      )
+      !(await requestConfirmation({
+        title: "Delete song?",
+        message: `Delete "${song.title}" and all of its sections? This cannot be undone.`,
+        confirmLabel: "Delete song",
+      }))
     )
       return;
     setActionError(null);

@@ -9,6 +9,7 @@ import {
   friendlyError,
 } from "@/lib/supabase/data";
 import { WorshipSet } from "@/lib/types";
+import { useNotifications } from "@/components/Notifications";
 import {
   Button,
   Card,
@@ -36,6 +37,7 @@ function formatDate(iso?: string) {
 
 export default function WorshipSetsPage() {
   const router = useRouter();
+  const { requestConfirmation } = useNotifications();
   const [sets, setSets] = useState<WorshipSet[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -60,9 +62,11 @@ export default function WorshipSetsPage() {
 
   async function handleDelete(set: WorshipSet) {
     if (
-      !window.confirm(
-        `Delete "${set.name}"? The songs in it will remain in Songs.`,
-      )
+      !(await requestConfirmation({
+        title: "Delete worship set?",
+        message: `Delete "${set.name}"? The songs in it will remain in Songs.`,
+        confirmLabel: "Delete worship set",
+      }))
     )
       return;
     setDeletingId(set.id);
