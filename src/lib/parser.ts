@@ -158,46 +158,16 @@ function parsePlainLyrics(lines: string[]): ParsedSection[] {
     .map((block) =>
       block
         .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
+        .filter((line) => line.trim() !== "")
         .join("\n"),
     )
     .filter(Boolean);
 
-  if (blocks.length <= 1) {
-    return blocks.length
-      ? [
-          {
-            section_type: "uncategorized",
-            section_label: "Uncategorized",
-            content: blocks[0],
-          },
-        ]
-      : [];
-  }
+  if (blocks.length === 0) return [];
 
-  const counts = new Map<string, number>();
-  for (const block of blocks) {
-    const key = block.toLowerCase().replace(/\s+/g, " ");
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-
-  let verseNumber = 0;
-  return blocks.map((content) => {
-    const key = content.toLowerCase().replace(/\s+/g, " ");
-    if ((counts.get(key) ?? 0) > 1) {
-      return {
-        section_type: "chorus",
-        section_label: "Chorus",
-        content,
-      };
-    }
-
-    verseNumber += 1;
-    return {
-      section_type: "verse",
-      section_label: `Verse ${verseNumber}`,
-      content,
-    };
-  });
+  return blocks.map((content) => ({
+    section_type: "uncategorized",
+    section_label: "Uncategorized",
+    content,
+  }));
 }

@@ -323,9 +323,10 @@ check(
     explicit,
   );
   check(
-    "plain lyrics infer equivalent section boundaries",
-    plain.map((s) => s.section_type).join("|") ===
-      explicit.map((s) => s.section_type).join("|") &&
+    "plain lyrics preserve separate unlabeled blocks",
+    plain.length === 4 &&
+      plain.map((s) => s.section_type).join("|") ===
+        "uncategorized|uncategorized|uncategorized|uncategorized" &&
       plain.map((s) => s.content).join("\n\n") ===
         explicit.map((s) => s.content).join("\n\n"),
     plain,
@@ -425,8 +426,8 @@ check(
   const raw = "some free text\nmore text\n\nanother block\nof words";
   const p = parseLyrics(raw);
   check(
-    "unlabeled blocks infer separate sections",
-    p.length === 2 && p.every((s) => s.section_type === "verse"),
+    "unlabeled blocks remain separate neutral sections",
+    p.length === 2 && p.every((s) => s.section_type === "uncategorized"),
   );
   const sl = buildSlides(p, S());
   const allText = sl.flatMap((s) => s.lines).join(" ");
@@ -435,6 +436,29 @@ check(
     ["some free text", "more text", "another block", "of words"].every((t) =>
       allText.includes(t),
     ),
+  );
+
+  const repeatedBlocks = parseLyrics(
+    "Verse-like line one\nVerse-like line two\n\nBridge-like line\n\nChorus-like line one\nChorus-like line two\n\nBridge-like line\n\nChorus-like line one\nChorus-like line two",
+  );
+  check(
+    "repeated plain blocks remain separate",
+    repeatedBlocks.length === 5 &&
+      repeatedBlocks.every(
+        (section) => section.section_type === "uncategorized",
+      ) &&
+      repeatedBlocks.map((section) => section.content).join("\n\n") ===
+        "Verse-like line one\nVerse-like line two\n\nBridge-like line\n\nChorus-like line one\nChorus-like line two\n\nBridge-like line\n\nChorus-like line one\nChorus-like line two",
+    repeatedBlocks,
+  );
+  const repeatedBlockSlides = buildSlides(repeatedBlocks, S());
+  check(
+    "repeated plain blocks remain separate in slides",
+    repeatedBlockSlides.length === 5 &&
+      repeatedBlockSlides.every(
+        (slide) => slide.sectionLabel === "Uncategorized",
+      ),
+    repeatedBlockSlides.map((slide) => slide.sectionLabel),
   );
 }
 
