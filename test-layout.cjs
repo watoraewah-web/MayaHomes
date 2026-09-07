@@ -134,6 +134,14 @@ check(
     "seven",
     "eight",
   ].join("\n");
+  const pastedWithSpacing = parseLyrics(
+    `Verse 1\n\n${content.replace(/\n/g, "\n\n")}`,
+  );
+  check(
+    "spaced pasted lyrics stay one section",
+    pastedWithSpacing.length === 1 &&
+      pastedWithSpacing[0].content.includes("eight"),
+  );
   const sl = buildSlides(
     [{ section_type: "verse", section_label: "V", content }],
     S({ maxLinesPerSlide: 4 }),
@@ -151,6 +159,24 @@ check(
   check(
     "slide counters set",
     sl[0].totalSlidesInSection === 2 && sl[1].slideNumberInSection === 2,
+  );
+
+  const sixLineSlides = buildSlides(
+    [
+      {
+        section_type: "verse",
+        section_label: "V",
+        content: ["one", "two", "three", "four", "five", "six"].join("\n"),
+      },
+    ],
+    S({ maxLinesPerSlide: 4 }),
+  );
+  check(
+    "6 lines balance to 3 + 3 when they fit",
+    sixLineSlides.length === 2 &&
+      sixLineSlides[0].lines.length === 3 &&
+      sixLineSlides[1].lines.length === 3,
+    sixLineSlides.map((s) => s.lines),
   );
 }
 
@@ -215,6 +241,35 @@ check(
     "all 6 sections produce slides in order",
     sl.length === 6 &&
       sl.map((s) => s.sectionLabel).join("|") === labels.join("|"),
+  );
+
+  const duplicateVerses = buildSlides(
+    [
+      {
+        section_type: "verse",
+        section_label: "Verse 1",
+        content: "same first line\nsame second line",
+      },
+      {
+        section_type: "verse",
+        section_label: "Verse 2",
+        content: " SAME FIRST LINE \nSAME SECOND LINE",
+      },
+      {
+        section_type: "chorus",
+        section_label: "Chorus",
+        content: "same first line\nsame second line",
+      },
+    ],
+    S(),
+  );
+  check(
+    "duplicate verse content is rendered once",
+    duplicateVerses.filter((s) => s.sectionType === "verse").length === 1,
+  );
+  check(
+    "repeated chorus content remains rendered",
+    duplicateVerses.some((s) => s.sectionType === "chorus"),
   );
 }
 

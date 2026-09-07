@@ -31,7 +31,9 @@ const LABEL_ALIASES: { pattern: RegExp; type: SectionType }[] = [
  * Returns the canonical section for a bare label line such as "[Verse 2]",
  * "CHORUS", "pre-chorus", or "Bridge:". Returns null for ordinary lyric lines.
  */
-export function matchSectionLabel(line: string): { type: SectionType; label: string } | null {
+export function matchSectionLabel(
+  line: string,
+): { type: SectionType; label: string } | null {
   let text = line.trim();
   text = text.replace(/^[\[(]+\s*/, "").replace(/\s*[\])]+$/, "");
   text = text.replace(/[:\-–—]\s*$/, "").trim();
@@ -83,16 +85,19 @@ export function parseLyrics(raw: string): ParsedSection[] {
   let pendingLabel: { type: SectionType; label: string } | null = null;
 
   const pushEmpty = (label: { type: SectionType; label: string }) => {
-    sections.push({ section_type: label.type, section_label: label.label, content: "" });
+    sections.push({
+      section_type: label.type,
+      section_label: label.label,
+      content: "",
+    });
   };
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     if (trimmed === "") {
-      // Blank line closes the current block of content. A label waiting for
-      // its lyrics survives, since blank lines often follow the label.
-      current = null;
+      // Blank lines are spacing from pasted lyrics, not section boundaries.
+      // A following recognized label is what starts the next section.
       continue;
     }
 
@@ -109,14 +114,22 @@ export function parseLyrics(raw: string): ParsedSection[] {
 
     // Ordinary lyric line: attach to the pending label, or open a block.
     if (pendingLabel) {
-      current = { section_type: pendingLabel.type, section_label: pendingLabel.label, content: trimmed };
+      current = {
+        section_type: pendingLabel.type,
+        section_label: pendingLabel.label,
+        content: trimmed,
+      };
       sections.push(current);
       pendingLabel = null;
       continue;
     }
 
     if (!current) {
-      current = { section_type: "uncategorized", section_label: "Uncategorized", content: trimmed };
+      current = {
+        section_type: "uncategorized",
+        section_label: "Uncategorized",
+        content: trimmed,
+      };
       sections.push(current);
       continue;
     }

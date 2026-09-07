@@ -213,6 +213,22 @@ export function buildSlides(
   const maxSemantic = Math.max(1, Math.round(settings.maxLinesPerSlide));
   const slides: Slide[] = [];
 
+  // Verse copies are commonly pasted as separate numbered sections. Keep the
+  // first occurrence, while preserving repeated choruses as intentional song
+  // structure.
+  const seenVerseContent = new Set<string>();
+  const renderSections = sections.filter((section) => {
+    if (section.section_type !== "verse") return true;
+    const key = section.content
+      .split("\n")
+      .map((line) => line.trim().toLowerCase().replace(/\s+/g, " "))
+      .filter(Boolean)
+      .join("\n");
+    if (!key || seenVerseContent.has(key)) return false;
+    seenVerseContent.add(key);
+    return true;
+  });
+
   /** Splits an overlong single line across several slides at the floor font. */
   const splitSingleLine = (
     line: string,
@@ -239,7 +255,8 @@ export function buildSlides(
     }
   };
 
-  sections.forEach((section, sectionIndex) => {
+  renderSections.forEach((section) => {
+    const sectionIndex = sections.indexOf(section);
     const semanticWithSource = section.content
       .split("\n")
       .map((line, sourceLineIndex) => ({ line: line.trim(), sourceLineIndex }))
@@ -253,6 +270,7 @@ export function buildSlides(
     let buffer: string[] = [];
     let bufferStart = -1;
     let bufferEnd = -1;
+    let targetMax = maxSemantic;
 
     const flushBuffer = () => {
       if (buffer.length === 0) return;
@@ -272,11 +290,23 @@ export function buildSlides(
       bufferEnd = -1;
     };
 
-    for (const { line, sourceLineIndex } of semanticWithSource) {
-      if (buffer.length === 0) bufferStart = sourceLineIndex;
+    for (
+      let lineIndex = 0;
+      lineIndex < semanticWithSource.length;
+      lineIndex++
+    ) {
+      const { line, sourceLineIndex } = semanticWithSource[lineIndex];
+      if (buffer.length === 0) {
+        bufferStart = sourceLineIndex;
+        const remaining = semanticWithSource.length - lineIndex;
+        targetMax =
+          remaining > maxSemantic && remaining <= maxSemantic * 2
+            ? Math.ceil(remaining / 2)
+            : maxSemantic;
+      }
       const candidate = [...buffer, line];
 
-      if (candidate.length > maxSemantic) {
+      if (candidate.length > targetMax) {
         flushBuffer();
         buffer = [line];
         bufferStart = sourceLineIndex;
