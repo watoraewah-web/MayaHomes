@@ -309,6 +309,27 @@ check(
         "verse|chorus|pre-chorus|bridge|pre-chorus",
     p.map((s) => s.section_label),
   );
+
+  const explicit = parseLyrics(
+    "### VERSE 1\nfirst verse line\nsecond verse line\n\n### CHORUS\nrepeat line one\nrepeat line two\n\n### VERSE 2\nsecond verse\n\n### CHORUS\nrepeat line one\nrepeat line two",
+  );
+  const plain = parseLyrics(
+    "first verse line\nsecond verse line\n\nrepeat line one\nrepeat line two\n\nsecond verse\n\nrepeat line one\nrepeat line two",
+  );
+  check(
+    "explicit markdown headers preserve section structure",
+    explicit.map((s) => s.section_type).join("|") ===
+      "verse|chorus|verse|chorus",
+    explicit,
+  );
+  check(
+    "plain lyrics infer equivalent section boundaries",
+    plain.map((s) => s.section_type).join("|") ===
+      explicit.map((s) => s.section_type).join("|") &&
+      plain.map((s) => s.content).join("\n\n") ===
+        explicit.map((s) => s.content).join("\n\n"),
+    plain,
+  );
 }
 
 /* ===== 9. Editable preview source mapping + worship set composition ===== */
@@ -404,8 +425,8 @@ check(
   const raw = "some free text\nmore text\n\nanother block\nof words";
   const p = parseLyrics(raw);
   check(
-    "unlabeled -> uncategorized",
-    p.every((s) => s.section_type === "uncategorized"),
+    "unlabeled blocks infer separate sections",
+    p.length === 2 && p.every((s) => s.section_type === "verse"),
   );
   const sl = buildSlides(p, S());
   const allText = sl.flatMap((s) => s.lines).join(" ");

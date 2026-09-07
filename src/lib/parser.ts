@@ -35,6 +35,7 @@ export function matchSectionLabel(
   line: string,
 ): { type: SectionType; label: string } | null {
   let text = line.trim();
+  text = text.replace(/^#{1,6}\s*/, "");
   text = text.replace(/^[\[(]+\s*/, "").replace(/\s*[\])]+$/, "");
   text = text.replace(/[:\-–—]\s*$/, "").trim();
   if (!text || text.length > 40) return null;
@@ -79,6 +80,14 @@ export function titleCaseType(type: SectionType): string {
  */
 export function parseLyrics(raw: string): ParsedSection[] {
   const lines = raw.replace(/\r\n/g, "\n").split("\n");
+
+  // Explicit labels retain the line-by-line parser below. Plain lyrics use
+  // blank-line blocks as the author's structural boundaries; repeated blocks
+  // are the strongest reliable signal for a chorus without inventing splits.
+  if (!lines.some((line) => matchSectionLabel(line.trim()))) {
+    return parsePlainLyrics(lines);
+  }
+
   const sections: ParsedSection[] = [];
 
   let current: ParsedSection | null = null;
@@ -140,4 +149,55 @@ export function parseLyrics(raw: string): ParsedSection[] {
   if (pendingLabel) pushEmpty(pendingLabel);
 
   return sections;
+}
+
+function parsePlainLyrics(lines: string[]): ParsedSection[] {
+  const blocks = lines
+    .join("\n")
+    .split(/\n\s*\n+/)
+    .map((block) =>
+      block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .filter(Boolean);
+
+  if (blocks.length <= 1) {
+    return blocks.length
+      ? [
+          {
+            section_type: "uncategorized",
+            section_label: "Uncategorized",
+            content: blocks[0],
+          },
+        ]
+      : [];
+  }
+
+  const counts = new Map<string, number>();
+  for (const block of blocks) {
+    const key = block.toLowerCase().replace(/\s+/g, " ");
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  let verseNumber = 0;
+  return blocks.map((content) => {
+    const key = content.toLowerCase().replace(/\s+/g, " ");
+    if ((counts.get(key) ?? 0) > 1) {
+      return {
+        section_type: "chorus",
+        section_label: "Chorus",
+        content,
+      };
+    }
+
+    verseNumber += 1;
+    return {
+      section_type: "verse",
+      section_label: `Verse ${verseNumber}`,
+      content,
+    };
+  });
 }
