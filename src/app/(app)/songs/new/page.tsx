@@ -80,8 +80,8 @@ export default function NewSongPage() {
           Create Song
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Paste the complete lyrics. MAYA will detect the sections
-          automatically.
+          Paste the complete lyrics. Warrior of Faith International Christian
+          Ministry will detect the sections automatically.
         </p>
       </div>
 

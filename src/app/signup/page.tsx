@@ -60,7 +60,7 @@ export default function SignUpPage() {
         <div className="mb-8 flex flex-col items-center gap-2">
           <MayaMark className="text-zinc-900" />
           <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
-            MAYA
+            Warrior of Faith International Christian Ministry
           </span>
         </div>
         <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-card">

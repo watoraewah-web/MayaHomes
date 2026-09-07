@@ -3,7 +3,8 @@ import "./globals.css";
 import { NotificationProvider } from "@/components/Notifications";
 
 export const metadata: Metadata = {
-  title: "MAYA — Worship Lyrics to PowerPoint",
+  title:
+    "Warrior of Faith International Christian Ministry — Worship Lyrics to PowerPoint",
   description:
     "Organize your song lyrics, preview your presentation, and generate a PowerPoint for your worship service.",
 };

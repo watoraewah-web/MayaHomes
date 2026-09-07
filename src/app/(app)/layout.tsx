@@ -49,7 +49,7 @@ function SidebarContent({
       <div className="flex h-16 items-center gap-2.5 border-b border-zinc-200 px-5">
         <MayaMark className="text-zinc-900" />
         <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
-          MAYA
+          Warrior of Faith International Christian Ministry
         </span>
       </div>
 
@@ -176,7 +176,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (loading) {
-    return <PageLoader label="Loading MAYA" />;
+    return (
+      <PageLoader label="Loading Warrior of Faith International Christian Ministry" />
+    );
   }
 
   if (sessionError || !user) {
@@ -218,7 +220,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2.5">
           <MayaMark className="text-zinc-900" />
           <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
-            MAYA
+            Warrior of Faith International Christian Ministry
           </span>
         </div>
         <button

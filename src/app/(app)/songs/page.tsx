@@ -169,7 +169,8 @@ export default function SongsPage() {
             Songs
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            All songs you have created in MAYA.
+            All songs you have created in Warrior of Faith International
+            Christian Ministry.
           </p>
         </div>
         <Button

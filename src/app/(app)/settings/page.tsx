@@ -74,7 +74,8 @@ export default function SettingsPage() {
           Settings
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Your MAYA account and profile.
+          Your Warrior of Faith International Christian Ministry account and
+          profile.
         </p>
       </div>
 
@@ -130,9 +131,9 @@ export default function SettingsPage() {
       </Card>
 
       <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-5 text-xs leading-relaxed text-zinc-400 shadow-card">
-        MAYA treats all lyrics as user-provided content. Only paste lyrics you
-        are authorized to use. Your songs, sections, and presentations are
-        private to your account.
+        Warrior of Faith International Christian Ministry treats all lyrics as
+        user-provided content. Only paste lyrics you are authorized to use. Your
+        songs, sections, and presentations are private to your account.
       </div>
     </div>
   );

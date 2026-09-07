@@ -219,8 +219,9 @@ export function SettingsPanel({
               }
             />
             <p className="mt-1 text-[11px] leading-snug text-zinc-400">
-              Groups count original lyric lines. If a group does not fit, MAYA
-              auto-fits the font or splits it into another slide.
+              Groups count original lyric lines. If a group does not fit,
+              Warrior of Faith International Christian Ministry auto-fits the
+              font or splits it into another slide.
             </p>
           </div>
         </div>
