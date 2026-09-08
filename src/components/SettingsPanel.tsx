@@ -154,7 +154,7 @@ export function SettingsPanel({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-card">
+    <div className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-card">
       <Group title="Screen">
         <SegmentedControl
           ariaLabel="Aspect ratio"
