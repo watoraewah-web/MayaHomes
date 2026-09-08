@@ -452,13 +452,18 @@ export default function SongEditorPage() {
           className={`${tab === "preview" ? "hidden xl:block" : "block"} min-h-0 xl:overflow-y-auto xl:pr-1`}
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              <EditIcon width={14} height={14} />
-              Sections
-              <span className="font-normal normal-case text-zinc-400">
-                ({sections.length})
-              </span>
-            </h2>
+            <div>
+              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                <EditIcon width={14} height={14} />
+                Sections
+                <span className="font-normal normal-case text-zinc-400">
+                  ({sections.length})
+                </span>
+              </h2>
+              <p className="mt-1 text-xs text-zinc-400">
+                Changes save automatically; drag sections to reorder them.
+              </p>
+            </div>
             <Link
               href="/songs/new"
               className="focus-ring text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-600 hover:underline"
@@ -518,9 +523,14 @@ export default function SongEditorPage() {
           className={`${tab === "sections" ? "hidden xl:block" : "block"} min-h-0 xl:overflow-y-auto xl:pr-1`}
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              Preview
-            </h2>
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                Preview
+              </h2>
+              <p className="mt-1 text-xs text-zinc-400">
+                Mirrors the layout used in the exported PowerPoint.
+              </p>
+            </div>
             <span className="text-xs text-zinc-400">
               {slides.length} slide{slides.length === 1 ? "" : "s"} ·{" "}
               {effectiveSettings.aspectRatio}
@@ -545,6 +555,9 @@ export default function SongEditorPage() {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Presentation Settings
             </h2>
+            <p className="mb-3 text-xs text-zinc-400">
+              Settings apply to the preview and the next export.
+            </p>
             <SettingsPanel
               settings={effectiveSettings}
               scrollable={false}

@@ -30,6 +30,7 @@ function SlideSurface({
   showDate = false,
   editable = false,
   selected = false,
+  fitContainer = false,
   onSelect,
   onEdit,
   onPositionChange,
@@ -41,6 +42,7 @@ function SlideSurface({
   showDate?: boolean;
   editable?: boolean;
   selected?: boolean;
+  fitContainer?: boolean;
   onSelect?: () => void;
   onEdit?: (value: string) => void;
   onPositionChange?: (patch: Partial<PresentationSettings>) => void;
@@ -91,7 +93,7 @@ function SlideSurface({
   return (
     <div
       ref={ref}
-      className={`relative w-full select-none overflow-hidden rounded-md border border-zinc-700 ${dimmed ? "opacity-60" : ""}`}
+      className={`relative ${fitContainer ? "h-full w-auto max-w-full" : "w-full"} select-none overflow-hidden rounded-md border border-zinc-700 ${dimmed ? "opacity-60" : ""}`}
       style={{
         aspectRatio: `${W} / ${H}`,
         backgroundColor:
@@ -352,9 +354,15 @@ export function PreviewPane({
   }, [clamped, total, onIndexChange]);
 
   const content = (
-    <div className={presentationMode ? "mx-auto w-full max-w-[1500px]" : ""}>
+    <div
+      className={
+        presentationMode
+          ? "mx-auto flex min-h-full w-full max-w-[1500px] flex-col"
+          : ""
+      }
+    >
       {presentationMode ? (
-        <div className="mb-4 flex items-center justify-between text-white">
+        <div className="mb-4 flex shrink-0 items-center justify-between text-white">
           <span className="text-sm font-medium">
             {current?.songTitle ?? "Worship Set"}
           </span>
@@ -370,7 +378,7 @@ export function PreviewPane({
         </div>
       ) : null}
       {editable && current ? (
-        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-card">
+        <div className="mb-2 flex shrink-0 flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-card">
           <span className="mr-1 font-medium text-zinc-500">Text</span>
           <Select
             value={settings.fontFamily}
@@ -459,18 +467,27 @@ export function PreviewPane({
           </span>
         </div>
       ) : null}
-      <SlideSurface
-        slide={current}
-        settings={settings}
-        showDate={clamped === 0}
-        editable={editable}
-        selected={selected}
-        onSelect={() => setSelected(true)}
-        onEdit={(text) => current && onEditSlide?.(current, text)}
-        onPositionChange={onSettingsChange}
-      />
+      <div
+        className={
+          presentationMode
+            ? "flex min-h-0 flex-1 items-center justify-center"
+            : ""
+        }
+      >
+        <SlideSurface
+          slide={current}
+          settings={settings}
+          showDate={clamped === 0}
+          editable={editable}
+          selected={selected}
+          fitContainer={presentationMode}
+          onSelect={() => setSelected(true)}
+          onEdit={(text) => current && onEditSlide?.(current, text)}
+          onPositionChange={onSettingsChange}
+        />
+      </div>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex shrink-0 items-center gap-3">
         <Button
           size="sm"
           variant="secondary"
@@ -527,7 +544,7 @@ export function PreviewPane({
       ) : null}
 
       {total > 0 ? (
-        <div className="mt-4 flex max-w-full flex-wrap gap-1 overflow-x-auto overflow-y-hidden pb-1">
+        <div className="mt-4 flex max-w-full shrink-0 flex-wrap gap-1 overflow-x-auto overflow-y-hidden pb-1">
           {slides.map((s, i) => (
             <button
               key={i}
@@ -546,7 +563,7 @@ export function PreviewPane({
   );
 
   return presentationMode ? (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-zinc-950 p-4 sm:p-8">
+    <div className="fixed inset-0 z-50 h-dvh overflow-y-auto bg-zinc-950 p-4 sm:p-8">
       {content}
     </div>
   ) : (

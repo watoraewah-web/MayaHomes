@@ -140,6 +140,9 @@ export default function NewSongPage() {
             />
             Remove Duplicate Lyrics
           </label>
+          <p className="mt-1 text-xs text-zinc-400">
+            Applies to pasted text only; manually typed lyrics stay unchanged.
+          </p>
         </div>
 
         {error ? (

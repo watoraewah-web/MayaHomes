@@ -606,12 +606,17 @@ export default function WorshipSetEditorPage() {
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              Songs{" "}
-              <span className="font-normal normal-case text-zinc-400">
-                ({items.length})
-              </span>
-            </h2>
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                Songs{" "}
+                <span className="font-normal normal-case text-zinc-400">
+                  ({items.length})
+                </span>
+              </h2>
+              <p className="mt-1 text-xs text-zinc-400">
+                Drag songs to change their presentation order.
+              </p>
+            </div>
             <Button
               size="sm"
               variant="secondary"
