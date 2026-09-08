@@ -142,7 +142,10 @@ export default function SongEditorPage() {
               content: s.content,
             })),
           );
-          if (saveVersionRef.current === version) setSaveState("saved");
+          if (saveVersionRef.current === version) {
+            setSaveState("saved");
+            notify("success", "Changes saved automatically.");
+          }
         } catch (e) {
           if (saveVersionRef.current !== version) return;
           setSaveError(friendlyError(e));

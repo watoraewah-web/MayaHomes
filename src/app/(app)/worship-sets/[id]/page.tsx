@@ -203,6 +203,7 @@ export default function WorshipSetEditorPage() {
           await saveWorshipSetSongs(set.id, savedItems);
           if (saveVersionRef.current === version) {
             setSaveState("saved");
+            notify("success", "Worship set saved automatically.");
             if (adding) updateOperationStatus(null);
           }
         } catch (e) {
@@ -398,6 +399,7 @@ export default function WorshipSetEditorPage() {
             ...(prev[songId] ? { [songId]: toEditorSections(saved) } : {}),
           }));
           setLyricsSaveState((prev) => ({ ...prev, [songId]: "saved" }));
+          notify("success", "Lyrics saved automatically.");
         } catch (e) {
           if (sectionSaveVersions.current[songId] !== version) return;
           setError(friendlyError(e));
@@ -482,6 +484,7 @@ export default function WorshipSetEditorPage() {
           );
           if (sectionSaveVersions.current[songId] === version) {
             persistedSectionsRef.current[songId] = nextSections;
+            notify("success", "Lyrics saved automatically.");
             updateOperationStatus(null);
           }
         } catch (e) {
