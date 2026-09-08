@@ -8,6 +8,7 @@ import {
   MoveDownIcon,
   MoveUpIcon,
 } from "@/components/icons";
+import type { DragEvent } from "react";
 
 export interface EditorSection {
   key: string;
@@ -59,6 +60,11 @@ export function SectionCard({
   onDelete,
   onDuplicate,
   onMove,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  isDropTarget = false,
 }: {
   index: number;
   total: number;
@@ -67,12 +73,47 @@ export function SectionCard({
   onDelete: () => void;
   onDuplicate: () => void;
   onMove: (direction: -1 | 1) => void;
+  onDragStart?: () => void;
+  onDragOver?: (before: boolean) => void;
+  onDrop?: (before: boolean) => void;
+  onDragEnd?: () => void;
+  isDropTarget?: boolean;
 }) {
   const contentLines = section.content ? section.content.split("\n").length : 1;
   const rows = Math.min(14, Math.max(3, contentLines + 1));
 
+  function handleDragStart(event: DragEvent<HTMLDivElement>) {
+    if (
+      (event.target as HTMLElement).closest("button, input, select, textarea")
+    ) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.effectAllowed = "move";
+    onDragStart?.();
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    onDragOver?.(event.clientY < bounds.top + bounds.height / 2);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    onDrop?.(event.clientY < bounds.top + bounds.height / 2);
+  }
+
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white shadow-card">
+    <div
+      draggable={Boolean(onDragStart)}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragEnd={onDragEnd}
+      className={`rounded-lg border bg-white shadow-card ${isDropTarget ? "border-zinc-500" : "border-zinc-200"}`}
+    >
       <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 px-3 py-2">
         <span
           className="w-6 text-center text-xs font-medium text-zinc-400"

@@ -76,6 +76,10 @@ export default function SongEditorPage() {
   const [genError, setGenError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [draggedSectionKey, setDraggedSectionKey] = useState<string | null>(
+    null,
+  );
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
 
   const loadedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -231,6 +235,30 @@ export default function SongEditorPage() {
       return next;
     });
   }, []);
+
+  const reorderSection = useCallback(
+    (targetKey: string, before: boolean) => {
+      if (!draggedSectionKey || draggedSectionKey === targetKey) return;
+      setSections((prev) => {
+        const draggedIndex = prev.findIndex(
+          (section) => section.key === draggedSectionKey,
+        );
+        const targetIndex = prev.findIndex(
+          (section) => section.key === targetKey,
+        );
+        if (draggedIndex === -1 || targetIndex === -1) return prev;
+
+        const next = [...prev];
+        const [dragged] = next.splice(draggedIndex, 1);
+        const adjustedTargetIndex = next.findIndex(
+          (section) => section.key === targetKey,
+        );
+        next.splice(adjustedTargetIndex + (before ? 0 : 1), 0, dragged);
+        return next;
+      });
+    },
+    [draggedSectionKey],
+  );
 
   function addSection() {
     setSections((prev) => [
@@ -453,6 +481,21 @@ export default function SongEditorPage() {
                   onDelete={() => deleteSection(section.key)}
                   onDuplicate={() => duplicateSection(section.key)}
                   onMove={(dir) => moveSection(section.key, dir)}
+                  onDragStart={() => setDraggedSectionKey(section.key)}
+                  onDragOver={(before) => setDropTargetKey(section.key)}
+                  onDrop={(before) => {
+                    reorderSection(section.key, before);
+                    setDraggedSectionKey(null);
+                    setDropTargetKey(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedSectionKey(null);
+                    setDropTargetKey(null);
+                  }}
+                  isDropTarget={
+                    dropTargetKey === section.key &&
+                    draggedSectionKey !== section.key
+                  }
                 />
               ))}
             </div>
@@ -469,7 +512,9 @@ export default function SongEditorPage() {
         </div>
 
         {/* Preview + settings */}
-        <div className={tab === "sections" ? "hidden xl:block" : "block"}>
+        <div
+          className={`${tab === "sections" ? "hidden xl:block" : "block"} min-h-0 xl:max-h-[calc(100vh-10rem)] xl:overflow-y-auto xl:pr-1`}
+        >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Preview
