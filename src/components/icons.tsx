@@ -221,13 +221,15 @@ export const AlertIcon = (p: IconProps) => (
 
 /** Shared application logo used by the public and authenticated layouts. */
 export const MayaMark = ({ className }: { className?: string }) => (
-  // eslint-disable-next-line @next/next/no-img-element
-  <img
-    src="/logo.png"
-    alt=""
-    className={className}
-    width="24"
-    height="24"
-    aria-hidden="true"
-  />
+  <span
+    className={`inline-flex aspect-square shrink-0 ${className ?? "h-6 w-6"}`}
+  >
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img
+      src="/logo.png"
+      alt=""
+      className="h-full w-full object-contain"
+      aria-hidden="true"
+    />
+  </span>
 );

@@ -57,6 +57,15 @@ const S = (over = {}) => ({ ...DEFAULT_SETTINGS, ...over });
     continuous === "one\ntwo\nthree\nfour\n\nfive",
     continuous,
   );
+  const unalignedDuplicate = processPastedLyrics(
+    "one\ntwo\nthree\nfour\nfive\nsix\none\ntwo\nthree\nfour\nfive\nsix\nlast",
+    true,
+  );
+  check(
+    "unaligned continuous duplicate sections are removed",
+    unalignedDuplicate === "one\ntwo\nthree\nfour\n\nfive\nsix\nlast",
+    unalignedDuplicate,
+  );
 }
 
 /* ===== 1. THE REPORTED BUG: one word per line ===== */

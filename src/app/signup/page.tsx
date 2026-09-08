@@ -55,19 +55,19 @@ export default function SignUpPage() {
   const configured = isSupabaseConfigured();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <MayaMark className="h-12 w-12 text-zinc-900" />
-          <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
+    <div className="flex min-h-screen items-center justify-center overflow-y-auto bg-canvas px-4 py-10 sm:py-16">
+      <div className="w-full max-w-md">
+        <div className="mb-7 flex flex-col items-center gap-3">
+          <MayaMark className="h-16 w-16 text-zinc-900" />
+          <span className="text-sm font-semibold tracking-[0.28em] text-zinc-900">
             WFICM
           </span>
         </div>
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-card">
-          <h1 className="text-base font-semibold text-zinc-900">
-            Create account
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-card sm:p-8">
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
+            Create your account
           </h1>
-          <p className="mb-5 mt-1 text-sm text-zinc-500">
+          <p className="mb-7 mt-2 text-sm leading-relaxed text-zinc-500">
             Start building worship presentations.
           </p>
           {configured ? (
@@ -131,7 +131,7 @@ export default function SignUpPage() {
               .env.local and restart the app.
             </ErrorMessage>
           )}
-          <p className="mt-5 border-t border-zinc-100 pt-4 text-center text-sm text-zinc-500">
+          <p className="mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-500">
             Already have an account?{" "}
             <Link
               href="/signin"
