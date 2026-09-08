@@ -548,6 +548,8 @@ export function PreviewPane({
       {content}
     </div>
   ) : (
-    content
+    <div className="max-h-[calc(100vh-10rem)] overflow-y-auto pr-1">
+      {content}
+    </div>
   );
 }

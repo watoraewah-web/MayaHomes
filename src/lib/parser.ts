@@ -152,6 +152,7 @@ export function parseLyrics(raw: string): ParsedSection[] {
 }
 
 function parsePlainLyrics(lines: string[]): ParsedSection[] {
+  const hasBlankLineSeparator = /\n\s*\n/.test(lines.join("\n"));
   const blocks = lines
     .join("\n")
     .split(/\n\s*\n+/)
@@ -164,6 +165,23 @@ function parsePlainLyrics(lines: string[]): ParsedSection[] {
     .filter(Boolean);
 
   if (blocks.length === 0) return [];
+
+  if (!hasBlankLineSeparator) {
+    return blocks.flatMap((block) => {
+      const lyricLines = block.split("\n");
+      const sections: ParsedSection[] = [];
+
+      for (let i = 0; i < lyricLines.length; i += 4) {
+        sections.push({
+          section_type: "uncategorized",
+          section_label: "Uncategorized",
+          content: lyricLines.slice(i, i + 4).join("\n"),
+        });
+      }
+
+      return sections;
+    });
+  }
 
   return blocks.map((content) => ({
     section_type: "uncategorized",
