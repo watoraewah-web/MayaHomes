@@ -446,9 +446,11 @@ export default function SongEditorPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid gap-6 xl:h-[calc(100vh-12rem)] xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_400px]">
         {/* Sections editor */}
-        <div className={tab === "preview" ? "hidden xl:block" : "block"}>
+        <div
+          className={`${tab === "preview" ? "hidden xl:block" : "block"} min-h-0 xl:overflow-y-auto xl:pr-1`}
+        >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
               <EditIcon width={14} height={14} />
@@ -513,7 +515,7 @@ export default function SongEditorPage() {
 
         {/* Preview + settings */}
         <div
-          className={`${tab === "sections" ? "hidden xl:block" : "block"} min-h-0 xl:max-h-[calc(100vh-10rem)] xl:overflow-y-auto xl:pr-1`}
+          className={`${tab === "sections" ? "hidden xl:block" : "block"} min-h-0 xl:overflow-y-auto xl:pr-1`}
         >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
@@ -529,6 +531,7 @@ export default function SongEditorPage() {
             index={slideIndex}
             onIndexChange={setSlideIndex}
             settings={effectiveSettings}
+            scrollable={false}
             editable
             onEditSlide={editPreviewSlide}
             onSettingsChange={(patch) =>
@@ -544,6 +547,7 @@ export default function SongEditorPage() {
             </h2>
             <SettingsPanel
               settings={effectiveSettings}
+              scrollable={false}
               onChange={(patch) =>
                 setSettings((prev) => ({
                   ...(prev ?? effectiveSettings),

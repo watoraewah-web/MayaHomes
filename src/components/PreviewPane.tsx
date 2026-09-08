@@ -297,6 +297,7 @@ export function PreviewPane({
   editable = false,
   onEditSlide,
   onSettingsChange,
+  scrollable = true,
 }: {
   slides: Slide[];
   index: number;
@@ -307,6 +308,7 @@ export function PreviewPane({
   editable?: boolean;
   onEditSlide?: (slide: Slide, text: string) => void;
   onSettingsChange?: (patch: Partial<PresentationSettings>) => void;
+  scrollable?: boolean;
 }) {
   const total = slides.length;
   const clamped = total ? Math.min(index, total - 1) : 0;
@@ -548,7 +550,11 @@ export function PreviewPane({
       {content}
     </div>
   ) : (
-    <div className="max-h-[calc(100vh-10rem)] overflow-y-auto pr-1">
+    <div
+      className={
+        scrollable ? "max-h-[calc(100vh-10rem)] overflow-y-auto pr-1" : ""
+      }
+    >
       {content}
     </div>
   );

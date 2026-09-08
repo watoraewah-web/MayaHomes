@@ -87,9 +87,11 @@ function Group({
 export function SettingsPanel({
   settings,
   onChange,
+  scrollable = true,
 }: {
   settings: PresentationSettings;
   onChange: (patch: Partial<PresentationSettings>) => void;
+  scrollable?: boolean;
 }) {
   const [uploading, setUploading] = useState<"image" | "video" | null>(null);
   const { notify } = useNotifications();
@@ -154,7 +156,9 @@ export function SettingsPanel({
   }
 
   return (
-    <div className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-card">
+    <div
+      className={`${scrollable ? "max-h-[calc(100vh-10rem)] overflow-y-auto" : ""} rounded-lg border border-zinc-200 bg-white shadow-card`}
+    >
       <Group title="Screen">
         <SegmentedControl
           ariaLabel="Aspect ratio"
