@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { PresentationSettings } from "@/lib/types";
 import {
@@ -320,6 +321,56 @@ export function PreviewPane({
   const lastNav = useRef(0);
   const [selected, setSelected] = useState(false);
   const [fontSizeInput, setFontSizeInput] = useState("");
+  const [presentationRoot, setPresentationRoot] = useState<HTMLElement | null>(
+    null,
+  );
+  const [popupBlocked, setPopupBlocked] = useState(false);
+  const exitPresentationRef = useRef(onExitPresentation);
+  exitPresentationRef.current = onExitPresentation;
+
+  useEffect(() => {
+    if (!presentationMode) {
+      setPresentationRoot(null);
+      setPopupBlocked(false);
+      return;
+    }
+
+    const popup = window.open(
+      "",
+      "wficm-presentation",
+      "popup=yes,width=1280,height=720,resizable=yes",
+    );
+    if (!popup) {
+      setPopupBlocked(true);
+      return;
+    }
+
+    popup.document.title = "WFICM Presentation";
+    popup.document.documentElement.style.background = "#000";
+    popup.document.body.style.margin = "0";
+    popup.document.body.style.background = "#000";
+    document
+      .querySelectorAll('link[rel="stylesheet"], style')
+      .forEach((node) => popup.document.head.appendChild(node.cloneNode(true)));
+    const root = popup.document.createElement("div");
+    popup.document.body.appendChild(root);
+    setPresentationRoot(root);
+    setPopupBlocked(false);
+    popup.focus();
+
+    const closeWatcher = window.setInterval(() => {
+      if (!popup.closed) return;
+      window.clearInterval(closeWatcher);
+      setPresentationRoot(null);
+      exitPresentationRef.current?.();
+    }, 250);
+
+    return () => {
+      window.clearInterval(closeWatcher);
+      if (!popup.closed) popup.close();
+      setPresentationRoot(null);
+    };
+  }, [presentationMode]);
 
   useEffect(() => {
     setFontSizeInput(String(current?.fontSize ?? settings.fontSize));
@@ -354,15 +405,18 @@ export function PreviewPane({
   }, [clamped, total, onIndexChange]);
 
   const content = (
-    <div
-      className={
-        presentationMode
-          ? "mx-auto flex min-h-full w-full max-w-[1500px] flex-col"
-          : ""
-      }
-    >
+    <div>
+      {presentationMode && popupBlocked ? (
+        <p
+          className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+          role="alert"
+        >
+          The presentation window was blocked. Allow pop-ups for this site, then
+          start Presentation again.
+        </p>
+      ) : null}
       {presentationMode ? (
-        <div className="mb-4 flex shrink-0 items-center justify-between text-white">
+        <div className="mb-4 flex items-center justify-between">
           <span className="text-sm font-medium">
             {current?.songTitle ?? "Worship Set"}
           </span>
@@ -378,7 +432,7 @@ export function PreviewPane({
         </div>
       ) : null}
       {editable && current ? (
-        <div className="mb-2 flex shrink-0 flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-card">
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-card">
           <span className="mr-1 font-medium text-zinc-500">Text</span>
           <Select
             value={settings.fontFamily}
@@ -480,14 +534,13 @@ export function PreviewPane({
           showDate={clamped === 0}
           editable={editable}
           selected={selected}
-          fitContainer={presentationMode}
           onSelect={() => setSelected(true)}
           onEdit={(text) => current && onEditSlide?.(current, text)}
           onPositionChange={onSettingsChange}
         />
       </div>
 
-      <div className="mt-3 flex shrink-0 items-center gap-3">
+      <div className="mt-3 flex items-center gap-3">
         <Button
           size="sm"
           variant="secondary"
@@ -544,7 +597,7 @@ export function PreviewPane({
       ) : null}
 
       {total > 0 ? (
-        <div className="mt-4 flex max-w-full shrink-0 flex-wrap gap-1 overflow-x-auto overflow-y-hidden pb-1">
+        <div className="mt-4 flex max-w-full flex-wrap gap-1 overflow-x-auto overflow-y-hidden pb-1">
           {slides.map((s, i) => (
             <button
               key={i}
@@ -562,17 +615,50 @@ export function PreviewPane({
     </div>
   );
 
-  return presentationMode ? (
-    <div className="fixed inset-0 z-50 h-dvh overflow-y-auto bg-zinc-950 p-4 sm:p-8">
-      {content}
-    </div>
-  ) : (
-    <div
-      className={
-        scrollable ? "max-h-[calc(100vh-10rem)] overflow-y-auto pr-1" : ""
-      }
-    >
-      {content}
-    </div>
+  const popupContent = presentationRoot
+    ? createPortal(
+        <div
+          className="flex h-screen w-screen items-center justify-center bg-black p-4"
+          tabIndex={0}
+          autoFocus
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft" || event.key === "PageUp") {
+              event.preventDefault();
+              onIndexChange(Math.max(0, clamped - 1));
+            } else if (
+              event.key === "ArrowRight" ||
+              event.key === "PageDown" ||
+              event.key === " "
+            ) {
+              event.preventDefault();
+              onIndexChange(Math.min(total - 1, clamped + 1));
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              exitPresentationRef.current?.();
+            }
+          }}
+        >
+          <SlideSurface
+            slide={current}
+            settings={settings}
+            showDate={clamped === 0}
+            fitContainer
+          />
+        </div>,
+        presentationRoot,
+      )
+    : null;
+
+  return (
+    <>
+      <div
+        className={
+          scrollable ? "max-h-[calc(100vh-10rem)] overflow-y-auto pr-1" : ""
+        }
+      >
+        {content}
+      </div>
+      {popupContent}
+    </>
   );
 }

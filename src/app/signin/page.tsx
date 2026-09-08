@@ -90,7 +90,7 @@ export default function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-2">
-          <MayaMark className="text-zinc-900" />
+          <MayaMark className="h-12 w-12 text-zinc-900" />
           <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
             WFICM
           </span>
