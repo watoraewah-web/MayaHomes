@@ -47,7 +47,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-2.5 border-b border-zinc-200 px-5">
-        <MayaMark className="text-zinc-900" />
+        <MayaMark className="h-8 w-8 text-zinc-900" />
         <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
           WFICM
         </span>

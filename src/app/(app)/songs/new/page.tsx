@@ -122,8 +122,8 @@ export default function NewSongPage() {
               );
             }}
             placeholder="Enter or paste song lyrics"
-            rows={16}
-            className="min-h-[320px] font-mono text-[13px]"
+            rows={10}
+            className="min-h-[220px] font-mono text-[13px]"
             spellCheck={false}
           />
           <p className="mt-2 text-xs leading-relaxed text-zinc-400">
