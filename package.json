@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsc src/lib/parser.ts src/lib/slides.ts src/lib/types.ts src/lib/pptx.ts src/lib/textMeasure.ts --outDir tmp-test --module commonjs --target es2020 --esModuleInterop --skipLibCheck --moduleResolution node && node test-layout.cjs"
+    "test": "tsc src/lib/parser.ts src/lib/pastedLyrics.ts src/lib/slides.ts src/lib/types.ts src/lib/pptx.ts src/lib/textMeasure.ts --outDir tmp-test --module commonjs --target es2020 --esModuleInterop --skipLibCheck --moduleResolution node && node test-layout.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

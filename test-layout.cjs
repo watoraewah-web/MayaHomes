@@ -1,4 +1,5 @@
 const { parseLyrics, matchSectionLabel } = require("./tmp-test/parser.js");
+const { processPastedLyrics } = require("./tmp-test/pastedLyrics.js");
 const {
   buildSlides,
   buildWorshipSetSlides,
@@ -27,6 +28,36 @@ function check(name, cond, detail) {
 }
 
 const S = (over = {}) => ({ ...DEFAULT_SETTINGS, ...over });
+
+/* ===== 0. Optional duplicate removal for pasted lyrics ===== */
+{
+  const duplicateBlocks =
+    "Verse 1\nfirst line\nsecond line\n\nChorus\nchorus line\n\nChorus\nchorus line";
+  const removed = processPastedLyrics(duplicateBlocks, true);
+  check(
+    "duplicate removal ON removes duplicate blocks",
+    removed === "Verse 1\nfirst line\nsecond line\n\nChorus\nchorus line",
+    removed,
+  );
+  check(
+    "duplicate removal OFF preserves pasted lyrics",
+    processPastedLyrics(duplicateBlocks, false) === duplicateBlocks,
+  );
+  const repeatedLineSection = "Verse\n\nrepeat\nrepeat\nrepeat\nrepeat";
+  check(
+    "repeated lines within a section are preserved",
+    processPastedLyrics(repeatedLineSection, true) === repeatedLineSection,
+  );
+  const continuous = processPastedLyrics(
+    "one\ntwo\nthree\nfour\none\ntwo\nthree\nfour\nfive",
+    true,
+  );
+  check(
+    "continuous pasted lyrics still group in fours",
+    continuous === "one\ntwo\nthree\nfour\n\nfive",
+    continuous,
+  );
+}
 
 /* ===== 1. THE REPORTED BUG: one word per line ===== */
 const testLyrics = `Verse 1

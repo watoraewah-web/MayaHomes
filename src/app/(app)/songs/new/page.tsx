@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { parseLyrics } from "@/lib/parser";
+import { processPastedLyrics } from "@/lib/pastedLyrics";
 import { createSong, friendlyError } from "@/lib/supabase/data";
 import {
   Button,
@@ -27,6 +28,7 @@ export default function NewSongPage() {
   const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
   const [lyrics, setLyrics] = useState("");
+  const [removeDuplicateLyrics, setRemoveDuplicateLyrics] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [processingMessage, setProcessingMessage] = useState<string | null>(
@@ -108,7 +110,10 @@ export default function NewSongPage() {
             onPaste={(e) => {
               e.preventDefault();
               const textarea = e.currentTarget;
-              const pasted = e.clipboardData.getData("text/plain");
+              const pasted = processPastedLyrics(
+                e.clipboardData.getData("text/plain"),
+                removeDuplicateLyrics,
+              );
               const start = textarea.selectionStart;
               const end = textarea.selectionEnd;
               setLyrics(
@@ -126,6 +131,15 @@ export default function NewSongPage() {
             Bridge. Blocks without a recognized label are kept as Uncategorized,
             so nothing is lost. Only paste lyrics you are authorized to use.
           </p>
+          <label className="mt-3 flex items-center gap-2 text-sm text-zinc-600">
+            <input
+              type="checkbox"
+              checked={removeDuplicateLyrics}
+              onChange={(e) => setRemoveDuplicateLyrics(e.target.checked)}
+              className="h-3.5 w-3.5 accent-zinc-900"
+            />
+            Remove Duplicate Lyrics
+          </label>
         </div>
 
         {error ? (
