@@ -98,6 +98,8 @@ export interface PresentationSettings {
   showSectionLabel: boolean;
   backgroundType: BackgroundType;
   backgroundColor: string;
+  backgroundImageId: string | null;
+  backgroundVideoId: string | null;
   backgroundImageUrl: string | null;
   backgroundVideoUrl: string | null;
 }
@@ -114,6 +116,8 @@ export const DEFAULT_SETTINGS: PresentationSettings = {
   showSectionLabel: false,
   backgroundType: "solid",
   backgroundColor: "#000000",
+  backgroundImageId: null,
+  backgroundVideoId: null,
   backgroundImageUrl: null,
   backgroundVideoUrl: null,
 };
@@ -123,6 +127,10 @@ export function normalizeSettings(raw: unknown): PresentationSettings {
   return {
     ...DEFAULT_SETTINGS,
     ...s,
+    backgroundImageId:
+      typeof s.backgroundImageId === "string" ? s.backgroundImageId : null,
+    backgroundVideoId:
+      typeof s.backgroundVideoId === "string" ? s.backgroundVideoId : null,
     backgroundImageUrl: null,
     backgroundVideoUrl: null,
     textColor:

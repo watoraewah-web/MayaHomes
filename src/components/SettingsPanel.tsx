@@ -9,6 +9,11 @@ import {
 import { useNotifications } from "@/components/Notifications";
 import { Button, Input, Label, Select } from "@/components/ui";
 import { ImageIcon, UploadIcon } from "@/components/icons";
+import {
+  deleteMedia,
+  revokeObjectUrl,
+  saveMedia,
+} from "@/lib/mediaStorage";
 
 const FONT_FAMILIES = [
   "Arial",
@@ -122,13 +127,32 @@ export function SettingsPanel({
     }
     setUploading(kind);
     try {
+      const id = await saveMedia(file, kind);
       const url = URL.createObjectURL(file);
-      if (mediaUrlRef.current) URL.revokeObjectURL(mediaUrlRef.current);
+      const oldIds = [settings.backgroundImageId, settings.backgroundVideoId];
+      await Promise.all(oldIds.filter(Boolean).map((oldId) => deleteMedia(oldId))).catch(
+        () => notify("error", "The previous background could not be cleaned up."),
+      );
+      revokeObjectUrl(settings.backgroundImageUrl);
+      revokeObjectUrl(settings.backgroundVideoUrl);
+      if (mediaUrlRef.current) revokeObjectUrl(mediaUrlRef.current);
       mediaUrlRef.current = url;
       onChange(
         kind === "image"
-          ? { backgroundType: "image", backgroundImageUrl: url }
-          : { backgroundType: "video", backgroundVideoUrl: url },
+          ? {
+              backgroundType: "image",
+              backgroundImageId: id,
+              backgroundImageUrl: url,
+              backgroundVideoId: null,
+              backgroundVideoUrl: null,
+            }
+          : {
+              backgroundType: "video",
+              backgroundVideoId: id,
+              backgroundVideoUrl: url,
+              backgroundImageId: null,
+              backgroundImageUrl: null,
+            },
       );
     } catch (e) {
       notify("error", e instanceof Error ? e.message : "Could not load media.");
@@ -143,13 +167,19 @@ export function SettingsPanel({
     onChange({ textColor: color });
   }
 
-  function removeMedia() {
-    if (mediaUrlRef.current) {
-      URL.revokeObjectURL(mediaUrlRef.current);
-      mediaUrlRef.current = null;
-    }
+  async function removeMedia() {
+    await Promise.all([
+      deleteMedia(settings.backgroundImageId),
+      deleteMedia(settings.backgroundVideoId),
+    ]).catch(() => notify("error", "The local background could not be removed."));
+    revokeObjectUrl(settings.backgroundImageUrl);
+    revokeObjectUrl(settings.backgroundVideoUrl);
+    if (mediaUrlRef.current) revokeObjectUrl(mediaUrlRef.current);
+    mediaUrlRef.current = null;
     onChange({
       backgroundType: "solid",
+      backgroundImageId: null,
+      backgroundVideoId: null,
       backgroundImageUrl: null,
       backgroundVideoUrl: null,
     });
@@ -358,7 +388,7 @@ export function SettingsPanel({
             >
               Upload image
             </Button>
-            {settings.backgroundImageUrl ? (
+            {settings.backgroundImageId || settings.backgroundImageUrl ? (
               <div className="flex flex-wrap items-center gap-2">
                 <p className="flex items-center gap-1.5 truncate text-xs text-zinc-500">
                   <ImageIcon width={12} height={12} className="shrink-0" />
@@ -389,7 +419,7 @@ export function SettingsPanel({
             >
               Upload video
             </Button>
-            {settings.backgroundVideoUrl ? (
+            {settings.backgroundVideoId || settings.backgroundVideoUrl ? (
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xs leading-relaxed text-zinc-500">
                   Video plays in preview. Exported slides use a dark background,

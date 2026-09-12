@@ -18,6 +18,7 @@ import {
   DEFAULT_SETTINGS,
 } from "@/lib/types";
 import { buildSlides, replaceSlideSource, Slide } from "@/lib/slides";
+import { resolvePresentationMedia } from "@/lib/mediaStorage";
 import {
   EditorSection,
   SectionCard,
@@ -90,18 +91,25 @@ export default function SongEditorPage() {
 
   useEffect(() => {
     let active = true;
+    let revokeMedia = () => {};
     loadSongWorkspace(songId)
-      .then((workspace) => {
+      .then(async (workspace) => {
         if (!active) return;
         if (!workspace) {
           setNotFound(true);
           return;
         }
+        const resolved = await resolvePresentationMedia(workspace.settings);
+        if (!active) {
+          resolved.revoke();
+          return;
+        }
+        revokeMedia = resolved.revoke;
         setSong(workspace.song);
         setTitle(workspace.song.title);
         setArtist(workspace.song.artist ?? "");
         setSections(rowsToEditorSections(workspace.sections));
-        setSettings(workspace.settings);
+        setSettings(resolved.settings);
         setLoading(false);
       })
       .catch((e) => {
@@ -111,6 +119,7 @@ export default function SongEditorPage() {
       });
     return () => {
       active = false;
+      revokeMedia();
     };
   }, [songId]);
 

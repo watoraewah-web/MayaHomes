@@ -13,6 +13,7 @@ import {
   WorshipSetSong,
 } from "../types";
 import { ParsedSection } from "../parser";
+import { deleteMedia } from "../mediaStorage";
 
 export function friendlyError(err: unknown): string {
   if (err instanceof Error) {
@@ -22,6 +23,35 @@ export function friendlyError(err: unknown): string {
     return err.message;
   }
   return "Something went wrong. Please try again.";
+}
+
+async function cleanupUnreferencedMedia(
+  settings: Partial<PresentationSettings> | null | undefined,
+): Promise<void> {
+  const mediaIds = [settings?.backgroundImageId, settings?.backgroundVideoId].filter(
+    (id): id is string => Boolean(id),
+  );
+  if (mediaIds.length === 0) return;
+
+  const supabase = getSupabaseBrowserClient();
+  const [presentations, worshipSets] = await Promise.all([
+    supabase.from("presentations").select("settings"),
+    supabase.from("worship_sets").select("settings"),
+  ]);
+  if (presentations.error || worshipSets.error) return;
+
+  const referencedIds = new Set<string>();
+  for (const row of [...(presentations.data ?? []), ...(worshipSets.data ?? [])]) {
+    const rowSettings = (row as { settings?: Partial<PresentationSettings> }).settings;
+    if (rowSettings?.backgroundImageId) referencedIds.add(rowSettings.backgroundImageId);
+    if (rowSettings?.backgroundVideoId) referencedIds.add(rowSettings.backgroundVideoId);
+  }
+
+  await Promise.all(
+    mediaIds
+      .filter((id) => !referencedIds.has(id))
+      .map((id) => deleteMedia(id).catch(() => undefined)),
+  );
 }
 /* ------------------------------- profile -------------------------------- */
 
@@ -106,6 +136,12 @@ export async function updateSong(
 }
 
 export async function deleteSong(songId: string): Promise<void> {
+  const { data: presentation, error: presentationError } = await getSupabaseBrowserClient()
+    .from("presentations")
+    .select("settings")
+    .eq("song_id", songId)
+    .maybeSingle();
+  if (presentationError) throw new Error(friendlyError(presentationError));
   const supabase = getSupabaseBrowserClient();
   for (const table of [
     "song_sections",
@@ -117,6 +153,7 @@ export async function deleteSong(songId: string): Promise<void> {
   }
   const { error } = await supabase.from("songs").delete().eq("id", songId);
   if (error) throw new Error(friendlyError(error));
+  await cleanupUnreferencedMedia(presentation?.settings);
 }
 
 /* ------------------------------- sections ------------------------------- */
@@ -239,8 +276,15 @@ export async function upsertPresentation(
 
 export async function deletePresentation(id: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
+  const { data: presentation, error: fetchError } = await supabase
+    .from("presentations")
+    .select("settings")
+    .eq("id", id)
+    .maybeSingle();
+  if (fetchError) throw new Error(friendlyError(fetchError));
   const { error } = await supabase.from("presentations").delete().eq("id", id);
   if (error) throw new Error(friendlyError(error));
+  await cleanupUnreferencedMedia(presentation?.settings);
 }
 
 /* ---------------------------- worship sets ----------------------------- */
@@ -335,6 +379,12 @@ export async function updateWorshipSet(
 
 export async function deleteWorshipSet(id: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
+  const { data: worshipSet, error: fetchError } = await supabase
+    .from("worship_sets")
+    .select("settings")
+    .eq("id", id)
+    .maybeSingle();
+  if (fetchError) throw new Error(friendlyError(fetchError));
   const { error: songsError } = await supabase
     .from("worship_set_songs")
     .delete()
@@ -342,6 +392,7 @@ export async function deleteWorshipSet(id: string): Promise<void> {
   if (songsError) throw new Error(friendlyError(songsError));
   const { error } = await supabase.from("worship_sets").delete().eq("id", id);
   if (error) throw new Error(friendlyError(error));
+  await cleanupUnreferencedMedia(worshipSet?.settings);
 }
 
 export async function removeSongFromWorshipSet(

@@ -8,6 +8,7 @@ import {
   LINE_HEIGHT,
   SLIDE_DIMENSIONS,
 } from "./slides";
+import { getMedia } from "./mediaStorage";
 
 async function toDataUrl(url: string): Promise<string> {
   const res = await fetch(url);
@@ -109,15 +110,25 @@ async function writePowerPoint({
   const toIn = (px: number) => px / 96;
 
   const hasImageBackground =
-    settings.backgroundType === "image" && settings.backgroundImageUrl;
+    settings.backgroundType === "image" &&
+    (settings.backgroundImageUrl || settings.backgroundImageId);
   let bgDataUrl: string | null = null;
   if (hasImageBackground) {
+    let temporaryUrl: string | null = null;
     try {
-      bgDataUrl = await toDataUrl(settings.backgroundImageUrl!);
+      let imageUrl = settings.backgroundImageUrl;
+      if (!imageUrl && settings.backgroundImageId) {
+        const media = await getMedia(settings.backgroundImageId);
+        if (media) {
+          temporaryUrl = URL.createObjectURL(media.blob);
+          imageUrl = temporaryUrl;
+        }
+      }
+      if (imageUrl) bgDataUrl = await toDataUrl(imageUrl);
     } catch {
-      throw new Error(
-        "The background image could not be loaded. Re-upload it in Presentation Settings and try again.",
-      );
+      bgDataUrl = null;
+    } finally {
+      if (temporaryUrl) URL.revokeObjectURL(temporaryUrl);
     }
   }
 

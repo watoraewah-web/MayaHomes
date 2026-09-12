@@ -16,6 +16,7 @@ import {
   updateWorshipSet,
 } from "@/lib/supabase/data";
 import { buildWorshipSetSlides, replaceSlideSource, Slide } from "@/lib/slides";
+import { resolvePresentationMedia } from "@/lib/mediaStorage";
 import {
   DEFAULT_SETTINGS,
   PresentationSettings,
@@ -109,13 +110,22 @@ export default function WorshipSetEditorPage() {
   }
 
   useEffect(() => {
+    let active = true;
+    let revokeMedia = () => {};
     Promise.all([
       fetchWorshipSet(setId),
       fetchWorshipSetSongs(setId),
       fetchSongs(),
     ])
       .then(async ([loadedSet, loadedItems, library]) => {
+        if (!active) return;
         if (!loadedSet) throw new Error("Worship set not found.");
+        const resolved = await resolvePresentationMedia(loadedSet.settings);
+        if (!active) {
+          resolved.revoke();
+          return;
+        }
+        revokeMedia = resolved.revoke;
         const uniqueSongs = loadedItems
           .map((item) => item.song)
           .filter((song): song is Song => Boolean(song));
@@ -124,7 +134,7 @@ export default function WorshipSetEditorPage() {
         );
         setSet(loadedSet);
         setName(loadedSet.name);
-        setSettings(loadedSet.settings);
+        setSettings(resolved.settings);
         setTitleSlides(loadedSet.add_song_title_slides);
         setItems(loadedItems);
         setSongs(library);
@@ -134,6 +144,10 @@ export default function WorshipSetEditorPage() {
       })
       .catch((e) => setError(friendlyError(e)))
       .finally(() => setLoading(false));
+    return () => {
+      active = false;
+      revokeMedia();
+    };
   }, [setId]);
 
   useEffect(() => {

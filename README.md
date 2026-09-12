@@ -71,10 +71,10 @@ Open http://localhost:3000. For a production build: `npm run build && npm start`
 7. **Presentation settings** — aspect ratio (16:9 / 4:3), font family, size,
    weight, text alignment, text position (top/center/bottom), max lines per
    slide, section label toggle, and background (solid color, uploaded image,
-   or session-local image/video — selected media is held in the browser with
-   an object URL and is cleared when the page or session is reloaded. Images
-   can be used for the current PowerPoint export; exported slides fall back to
-   a dark solid background for video because `.pptx` does not support video
+   or locally persistent image/video). Media files are stored in the browser's
+   IndexedDB and presentation settings store only stable local media IDs.
+   Images can be used for PowerPoint export; exported slides fall back to a
+   dark solid background for video because `.pptx` does not support video
    backgrounds. Media is not uploaded or persisted to Supabase Storage.
 8. **Generate PowerPoint** — produces a real, fully formatted `.pptx` named
    `WFICM - [Song Title].pptx` and downloads it.
