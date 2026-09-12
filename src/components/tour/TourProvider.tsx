@@ -259,7 +259,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       {tour && activeStep && targetRect ? (
         <div className="pointer-events-none fixed inset-0 z-[999]">
           <div
-            className="absolute rounded-md ring-2 ring-white/90 shadow-[0_0_0_9999px_rgba(24,24,27,0.42)]"
+            className="absolute rounded-md ring-1 ring-white/70 shadow-[0_0_0_9999px_rgba(24,24,27,0.36)]"
             style={{
               top: targetRect.top - 5,
               left: targetRect.left - 5,
@@ -355,16 +355,24 @@ function tooltipStyle(
 ): React.CSSProperties {
   const gap = 14;
   const width = 304;
-  const left = Math.max(
-    16,
-    Math.min(
-      window.innerWidth - width - 16,
-      rect.left + rect.width / 2 - width / 2,
-    ),
-  );
-  const top =
-    placement === "top" ? rect.top - gap - 170 : rect.top + rect.height + gap;
-  return { left, top: Math.max(16, Math.min(window.innerHeight - 190, top)) };
+  const height = 190;
+  let left = rect.left + rect.width / 2 - width / 2;
+  let top = rect.top + rect.height + gap;
+
+  if (placement === "top") top = rect.top - height - gap;
+  if (placement === "left") {
+    left = rect.left - width - gap;
+    top = rect.top + rect.height / 2 - height / 2;
+  }
+  if (placement === "right") {
+    left = rect.left + rect.width + gap;
+    top = rect.top + rect.height / 2 - height / 2;
+  }
+
+  return {
+    left: Math.max(16, Math.min(window.innerWidth - width - 16, left)),
+    top: Math.max(16, Math.min(window.innerHeight - height - 16, top)),
+  };
 }
 
 export function useTour() {

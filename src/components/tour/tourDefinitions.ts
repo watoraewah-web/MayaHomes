@@ -124,6 +124,7 @@ export const TOUR_DEFINITIONS: TourDefinition[] = [
         title: "Presentation Settings",
         description:
           "Control the visual appearance of your slides, including themes, typography, and backgrounds.",
+        placement: "left",
       },
       {
         target: "preset-themes",
