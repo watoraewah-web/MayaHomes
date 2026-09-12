@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { MayaMark } from "@/components/icons";
+import { VerseOfTheWeek } from "@/components/VerseOfTheWeek";
 
 function HalftoneArtwork() {
   return (
@@ -50,6 +51,7 @@ export function AuthLayout({
             </div>
             <div className="mt-8">{children}</div>
             {footer}
+            <VerseOfTheWeek className="mt-8" />
           </div>
         </section>
         <aside className="auth-art-panel order-2 relative min-h-[11rem] overflow-hidden bg-white lg:min-h-screen">

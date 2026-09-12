@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MayaMark } from "@/components/icons";
+import { VerseOfTheWeek } from "@/components/VerseOfTheWeek";
 
 const features = [
   {
@@ -72,6 +73,8 @@ export default function LandingPage() {
             </Link>
           </div>
         </section>
+
+        <VerseOfTheWeek className="mb-2" />
 
         <section className="grid gap-6 border-t border-zinc-200 py-14 sm:grid-cols-3">
           {features.map((f) => (

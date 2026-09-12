@@ -14,6 +14,7 @@ import { buildSlides } from "@/lib/slides";
 import { DEFAULT_SETTINGS, normalizeSettings } from "@/lib/types";
 import { fetchPresentationForSong } from "@/lib/supabase/data";
 import { useNotifications } from "@/components/Notifications";
+import { VerseOfTheWeek } from "@/components/VerseOfTheWeek";
 import {
   Button,
   Card,
@@ -139,6 +140,8 @@ export default function DashboardPage() {
           Create New Song
         </Button>
       </div>
+
+      <VerseOfTheWeek className="mb-9" />
 
       <section data-tour="dashboard-recent-songs">
         <div className="mb-3 flex items-center justify-between">
