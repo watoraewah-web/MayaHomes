@@ -109,6 +109,26 @@ html[data-theme="dark"] .hover\:text-zinc-900:hover {
   background-color: #fff;
 }
 
+.auth-page input {
+  border: 0;
+  border-bottom: 1px solid #d4d4d8;
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+  transition: border-color 150ms ease;
+}
+
+.auth-page input:hover {
+  border-bottom-color: #71717a;
+}
+
+.auth-page input:focus,
+.auth-page input:focus-visible {
+  border-bottom-color: #18181b;
+  box-shadow: none;
+  outline: none;
+}
+
 html[data-theme="dark"] .auth-page {
   background-color: #fff !important;
   color: #18181b !important;
