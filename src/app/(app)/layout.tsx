@@ -16,7 +16,6 @@ import {
   MayaMark,
   MenuIcon,
   CloseIcon,
-  PresentationsIcon,
   SettingsIcon,
   SongsIcon,
   UserIcon,
@@ -27,7 +26,6 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { href: "/songs", label: "Songs", icon: SongsIcon },
   { href: "/worship-sets", label: "Worship Sets", icon: WorshipSetsIcon },
-  { href: "/presentations", label: "Presentations", icon: PresentationsIcon },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
