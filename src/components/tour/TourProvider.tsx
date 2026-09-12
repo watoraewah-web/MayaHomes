@@ -100,6 +100,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const spotlight = targetRect ? getSpotlightBounds(targetRect) : null;
   useEffect(() => {
     if (!tour || !activeStep) return;
+    let cancelled = false;
     let frame = 0;
     const target = document.querySelector(
       `[data-tour="${activeStep.target}"]`,
@@ -115,24 +116,26 @@ export function TourProvider({ children }: { children: ReactNode }) {
       );
       return;
     }
-    target.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "nearest",
-    });
+
+    setTargetRect(null);
+    scrollTargetIntoView(target);
+
     const update = () => {
-      const rect = target.getBoundingClientRect();
-      setTargetRect({
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      });
+      if (cancelled) return;
+      setTargetRect(getVisibleRect(target));
     };
-    frame = requestAnimationFrame(update);
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, true);
+    const settle = async () => {
+      await nextAnimationFrame();
+      await nextAnimationFrame();
+      if (cancelled) return;
+      update();
+      window.addEventListener("resize", update);
+      window.addEventListener("scroll", update, true);
+    };
+    void settle();
+
     return () => {
+      cancelled = true;
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
@@ -258,7 +261,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
         </div>
       ) : null}
       {tour && activeStep && targetRect ? (
-        <div className="pointer-events-none fixed inset-0 z-[999]">
+        <div className="pointer-events-none fixed inset-0 z-[999] overflow-hidden">
           {spotlight ? (
             <>
               <div
@@ -304,7 +307,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
             </>
           ) : null}
           <div
-            className="pointer-events-auto absolute w-[min(19rem,calc(100vw-2rem))] rounded-lg border border-zinc-200 bg-white p-4 shadow-overlay"
+            className="pointer-events-auto absolute max-h-[calc(100vh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[19rem] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-3 shadow-overlay sm:w-[19rem] sm:p-4"
             style={tooltipStyle(targetRect, activeStep.placement)}
             role="dialog"
             aria-label={`${tour.name}, step ${stepIndex + 1} of ${tour.steps.length}`}
@@ -325,7 +328,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
               <div className="flex gap-1.5">
                 <button
                   type="button"
-                  className="focus-ring rounded-md px-2 py-1.5 text-xs text-zinc-500 hover:bg-zinc-100"
+                  className="focus-ring min-h-9 rounded-md px-2 py-1.5 text-xs text-zinc-500 hover:bg-zinc-100"
                   onClick={() => markSkipped(tour.id)}
                 >
                   Skip Tour
@@ -333,7 +336,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
                 {stepIndex > 0 ? (
                   <button
                     type="button"
-                    className="focus-ring rounded-md border border-zinc-300 px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50"
+                    className="focus-ring min-h-9 rounded-md border border-zinc-300 px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50"
                     onClick={previousStep}
                   >
                     Back
@@ -341,7 +344,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
                 ) : null}
                 <button
                   type="button"
-                  className="focus-ring rounded-md border border-zinc-900 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-zinc-700"
+                  className="focus-ring min-h-9 rounded-md border border-zinc-900 bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-zinc-700"
                   onClick={nextStep}
                 >
                   {stepIndex === tour.steps.length - 1 ? "Finish" : "Next"}
@@ -385,6 +388,76 @@ function advanceToAvailable(
   } else setStepIndex(next);
 }
 
+function nextAnimationFrame() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+}
+
+function scrollTargetIntoView(target: HTMLElement) {
+  const scrollableAncestors = getScrollableAncestors(target);
+  if (scrollableAncestors.length === 0) {
+    target.scrollIntoView({
+      behavior: "auto",
+      block: "center",
+      inline: "nearest",
+    });
+    return;
+  }
+
+  for (const ancestor of scrollableAncestors) {
+    const targetRect = target.getBoundingClientRect();
+    const ancestorRect = ancestor.getBoundingClientRect();
+    const padding = 20;
+
+    if (targetRect.height > ancestorRect.height - padding * 2) {
+      ancestor.scrollTop += targetRect.top - ancestorRect.top - padding;
+    } else if (targetRect.top < ancestorRect.top + padding) {
+      ancestor.scrollTop += targetRect.top - ancestorRect.top - padding;
+    } else if (targetRect.bottom > ancestorRect.bottom - padding) {
+      ancestor.scrollTop += targetRect.bottom - ancestorRect.bottom + padding;
+    }
+
+    if (targetRect.width > ancestorRect.width - padding * 2) {
+      ancestor.scrollLeft += targetRect.left - ancestorRect.left - padding;
+    } else if (targetRect.left < ancestorRect.left + padding) {
+      ancestor.scrollLeft += targetRect.left - ancestorRect.left - padding;
+    } else if (targetRect.right > ancestorRect.right - padding) {
+      ancestor.scrollLeft += targetRect.right - ancestorRect.right + padding;
+    }
+  }
+}
+
+function getScrollableAncestors(element: HTMLElement) {
+  const ancestors: HTMLElement[] = [];
+  let current = element.parentElement;
+
+  while (current) {
+    const style = window.getComputedStyle(current);
+    const scrollsVertically =
+      /(auto|scroll|overlay)/.test(style.overflowY) &&
+      current.scrollHeight > current.clientHeight;
+    const scrollsHorizontally =
+      /(auto|scroll|overlay)/.test(style.overflowX) &&
+      current.scrollWidth > current.clientWidth;
+    if (scrollsVertically || scrollsHorizontally) ancestors.push(current);
+    current = current.parentElement;
+  }
+
+  return ancestors;
+}
+
+function getVisibleRect(element: HTMLElement): Rect | null {
+  const rect = element.getBoundingClientRect();
+  const left = Math.max(0, rect.left);
+  const top = Math.max(0, rect.top);
+  const right = Math.min(window.innerWidth, rect.right);
+  const bottom = Math.min(window.innerHeight, rect.bottom);
+
+  if (right <= left || bottom <= top) return null;
+  return { top, left, width: right - left, height: bottom - top };
+}
+
 function getSpotlightBounds(rect: Rect) {
   const padding = 5;
   const top = Math.max(0, rect.top - padding);
@@ -410,15 +483,31 @@ function tooltipStyle(
   placement: TourPlacement = "bottom",
 ): React.CSSProperties {
   const gap = 14;
-  const margin = 16;
-  const width = Math.min(304, window.innerWidth - margin * 2);
-  const height = Math.min(220, window.innerHeight - margin * 2);
-  const placements: TourPlacement[] = [
-    placement,
-    ...(["top", "bottom", "left", "right"] as TourPlacement[]).filter(
-      (candidate) => candidate !== placement,
-    ),
-  ];
+  const isMobile = window.innerWidth < 640;
+  const margin = isMobile ? 12 : 16;
+  const width = Math.min(isMobile ? 320 : 304, window.innerWidth - margin * 2);
+  const height = Math.min(
+    isMobile ? 260 : 220,
+    window.innerHeight - margin * 2,
+  );
+  const targetRight = rect.left + rect.width;
+  const targetBottom = rect.top + rect.height;
+  const availableSpace: Record<TourPlacement, number> = {
+    top: rect.top - margin,
+    bottom: window.innerHeight - targetBottom - margin,
+    left: rect.left - margin,
+    right: window.innerWidth - targetRight - margin,
+  };
+  const candidates = (["top", "bottom", "left", "right"] as TourPlacement[])
+    .map((candidate) => ({
+      candidate,
+      score:
+        availableSpace[candidate] +
+        (candidate === placement ? 24 : 0) +
+        (isMobile && (candidate === "top" || candidate === "bottom") ? 20 : 0),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ candidate }) => candidate);
 
   const getPosition = (candidate: TourPlacement) => {
     if (candidate === "top")
@@ -443,7 +532,7 @@ function tooltipStyle(
   };
 
   const position =
-    placements
+    candidates
       .map((candidate) => ({ candidate, ...getPosition(candidate) }))
       .find(
         ({ left, top }) =>
