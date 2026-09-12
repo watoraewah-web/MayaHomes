@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   deleteWorshipSet,
-  fetchWorshipSetSongs,
   fetchWorshipSets,
+  fetchWorshipSetSongCounts,
   friendlyError,
 } from "@/lib/supabase/data";
 import { WorshipSet } from "@/lib/types";
@@ -45,16 +45,10 @@ export default function WorshipSetsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchWorshipSets()
-      .then(async (rows) => {
+    Promise.all([fetchWorshipSets(), fetchWorshipSetSongCounts()])
+      .then(([rows, nextCounts]) => {
         setSets(rows);
-        const entries = await Promise.all(
-          rows.map(
-            async (row) =>
-              [row.id, (await fetchWorshipSetSongs(row.id)).length] as const,
-          ),
-        );
-        setCounts(Object.fromEntries(entries));
+        setCounts(nextCounts);
       })
       .catch((e) => setError(friendlyError(e)))
       .finally(() => setLoading(false));

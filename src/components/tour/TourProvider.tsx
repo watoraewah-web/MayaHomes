@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   getTour,
   getTourForPath,
@@ -61,6 +61,7 @@ function writeState(state: TourState) {
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<TourState>({
     completed: [],
     skipped: [],
@@ -73,7 +74,14 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => setState(readState()), []);
 
-  const currentTour = useMemo(() => getTourForPath(pathname), [pathname]);
+  const currentTour = useMemo(
+    () =>
+      getTourForPath(
+        pathname,
+        searchParams.get("present") === "1" ? "presentation-mode" : undefined,
+      ),
+    [pathname, searchParams],
+  );
 
   useEffect(() => {
     if (
@@ -101,7 +109,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!tour || !activeStep) return;
     let cancelled = false;
-    let frame = 0;
+    const frame = 0;
     const target = document.querySelector(
       `[data-tour="${activeStep.target}"]`,
     ) as HTMLElement | null;
@@ -145,6 +153,14 @@ export function TourProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!tour) return;
     function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const inTourDialog = Boolean(target?.closest('[role="dialog"]'));
+      if (target?.closest('input, textarea, select, [contenteditable="true"]'))
+        return;
+      if (event.key !== "Escape" && !inTourDialog && target?.closest("button"))
+        return;
+      if (event.key !== "Escape" && inTourDialog && target?.closest("button"))
+        return;
       if (event.key === "Escape") markSkipped(tour!.id);
       if (event.key === "ArrowRight" || event.key === "Enter") nextStep();
       if (event.key === "ArrowLeft") previousStep();

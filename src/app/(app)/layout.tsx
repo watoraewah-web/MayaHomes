@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getSupabaseBrowserClient,
   isSupabaseConfigured,
 } from "@/lib/supabase/client";
-import { fetchProfile } from "@/lib/supabase/data";
+import { cleanupOrphanedMedia, fetchProfile } from "@/lib/supabase/data";
 import { Profile } from "@/lib/types";
 import { PageLoader } from "@/components/ui";
 import { TourProvider, useTour } from "@/components/tour/TourProvider";
@@ -136,6 +136,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sessionError, setSessionError] = useState(false);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -144,27 +146,111 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
     const supabase = getSupabaseBrowserClient();
     let active = true;
+    let profileUserId: string | null = null;
+
+    async function applyUser(
+      authUser: { id: string; email?: string | null } | null,
+    ) {
+      if (!active) return;
+      if (!authUser) {
+        profileUserId = null;
+        setUser(null);
+        setProfile(null);
+        setSessionError(true);
+        setLoading(false);
+        return;
+      }
+
+      setSessionError(false);
+      setUser({ id: authUser.id, email: authUser.email ?? "" });
+      void cleanupOrphanedMedia();
+      if (profileUserId === authUser.id) {
+        setLoading(false);
+        return;
+      }
+
+      profileUserId = authUser.id;
+      setProfile(null);
+      try {
+        const nextProfile = await fetchProfile(authUser.id);
+        if (active && profileUserId === authUser.id) setProfile(nextProfile);
+      } catch {
+        if (active && profileUserId === authUser.id) setProfile(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applyUser(session?.user ?? null);
+    });
 
     supabase.auth
       .getUser()
-      .then(({ data }) => {
+      .then(({ data }) => applyUser(data.user))
+      .catch(() => {
         if (!active) return;
-        if (!data.user) {
-          setSessionError(true);
-        } else {
-          setUser({ id: data.user.id, email: data.user.email ?? "" });
-          fetchProfile(data.user.id)
-            .then((p) => active && setProfile(p))
-            .catch(() => {});
-        }
-      })
-      .catch(() => active && setSessionError(true))
-      .finally(() => active && setLoading(false));
+        setSessionError(true);
+        setLoading(false);
+      });
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const menuButton = mobileMenuButtonRef.current;
+    document.body.style.overflow = "hidden";
+
+    const frame = window.requestAnimationFrame(() => {
+      const firstControl = mobileDrawerRef.current?.querySelector<HTMLElement>(
+        'button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      (firstControl ?? mobileDrawerRef.current)?.focus();
+    });
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !mobileDrawerRef.current) return;
+      const controls = Array.from(
+        mobileDrawerRef.current.querySelectorAll<HTMLElement>(
+          'button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("disabled"));
+      if (controls.length === 0) {
+        event.preventDefault();
+        mobileDrawerRef.current.focus();
+        return;
+      }
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      menuButton?.focus();
+    };
+  }, [mobileOpen]);
 
   async function handleSignOut() {
     const supabase = getSupabaseBrowserClient();
@@ -238,7 +324,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Mobile top bar */}
-        <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 lg:hidden">
+        <div
+          className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 lg:hidden"
+          aria-hidden={mobileOpen}
+        >
           <div className="flex items-center gap-2.5">
             <MayaMark className="h-8 w-8 text-zinc-900" />
             <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
@@ -246,6 +335,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </span>
           </div>
           <button
+            ref={mobileMenuButtonRef}
             onClick={() => setMobileOpen(true)}
             className="focus-ring rounded-md p-2 text-zinc-600 hover:bg-zinc-100"
             aria-label="Open menu"
@@ -256,13 +346,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Mobile drawer */}
         {mobileOpen ? (
-          <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="fixed inset-0 z-40 lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile navigation"
+          >
             <div
               className="absolute inset-0 bg-zinc-900/40"
               onClick={() => setMobileOpen(false)}
               aria-hidden="true"
             />
-            <div className="absolute inset-y-0 left-0 w-64 border-r border-zinc-200 bg-white shadow-overlay">
+            <div
+              ref={mobileDrawerRef}
+              tabIndex={-1}
+              className="absolute inset-y-0 left-0 w-64 border-r border-zinc-200 bg-white shadow-overlay"
+            >
               <button
                 onClick={() => setMobileOpen(false)}
                 className="focus-ring absolute right-2 top-4 rounded-md p-2 text-zinc-500 hover:bg-zinc-100"
@@ -280,7 +379,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         ) : null}
 
-        <main className="w-full min-w-0 flex-1 pb-16 pt-14 lg:pb-0 lg:pt-0">
+        <main
+          className="w-full min-w-0 flex-1 pb-16 pt-14 lg:pb-0 lg:pt-0"
+          aria-hidden={mobileOpen}
+        >
           {children}
         </main>
       </div>

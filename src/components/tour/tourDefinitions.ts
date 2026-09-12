@@ -233,17 +233,26 @@ export const TOUR_DEFINITIONS: TourDefinition[] = [
   },
 ];
 
-export function getTourForPath(pathname: string): TourDefinition | null {
+export function getTourForPath(
+  pathname: string,
+  preferredId?: string,
+): TourDefinition | null {
+  if (preferredId) {
+    const preferred = TOUR_DEFINITIONS.find(
+      (tour) => tour.id === preferredId && tourMatchesPath(tour, pathname),
+    );
+    if (preferred) return preferred;
+  }
+
   return (
-    TOUR_DEFINITIONS.find((tour) => {
-      if (tour.route.endsWith("/"))
-        return (
-          pathname.startsWith(tour.route) &&
-          pathname !== tour.route.slice(0, -1)
-        );
-      return pathname === tour.route;
-    }) ?? null
+    TOUR_DEFINITIONS.find((tour) => tourMatchesPath(tour, pathname)) ?? null
   );
+}
+
+function tourMatchesPath(tour: TourDefinition, pathname: string) {
+  return tour.route.endsWith("/")
+    ? pathname.startsWith(tour.route) && pathname !== tour.route.slice(0, -1)
+    : pathname === tour.route;
 }
 
 export function getTour(id: string): TourDefinition | null {

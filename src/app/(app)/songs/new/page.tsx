@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { parseLyrics } from "@/lib/parser";
 import { processPastedLyrics } from "@/lib/pastedLyrics";
+import { getSafeNextPath } from "@/lib/safeRedirect";
 import { createSong, friendlyError } from "@/lib/supabase/data";
 import {
   Button,
@@ -27,6 +28,7 @@ export default function NewSongPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
+  const [artist, setArtist] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [removeDuplicateLyrics, setRemoveDuplicateLyrics] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,13 +62,21 @@ export default function NewSongPage() {
       setProcessingMessage("Saving song and organized sections...");
       const { song } = await createSong({
         title: title.trim(),
+        artist: artist.trim() || undefined,
         rawLyrics: lyrics,
         parsed,
       });
       const returnTo = searchParams.get("returnTo");
-      router.push(
-        returnTo ? `${returnTo}?songId=${song.id}` : `/songs/${song.id}`,
-      );
+      const safeReturnTo = getSafeNextPath(returnTo, "");
+      if (!safeReturnTo) {
+        router.push(`/songs/${song.id}`);
+      } else {
+        const destination = new URL(safeReturnTo, window.location.origin);
+        destination.searchParams.set("songId", song.id);
+        router.push(
+          `${destination.pathname}${destination.search}${destination.hash}`,
+        );
+      }
     } catch (e) {
       setError(friendlyError(e));
     } finally {
@@ -100,6 +110,17 @@ export default function NewSongPage() {
               maxLength={200}
             />
           </div>
+        </div>
+
+        <div className="mt-5">
+          <Label htmlFor="artist">Artist (optional)</Label>
+          <Input
+            id="artist"
+            value={artist}
+            onChange={(e) => setArtist(e.target.value)}
+            placeholder="Enter artist name"
+            maxLength={200}
+          />
         </div>
 
         <div className="mt-5">

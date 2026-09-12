@@ -13,7 +13,7 @@ import {
   WorshipSetSong,
 } from "../types";
 import { ParsedSection } from "../parser";
-import { deleteMedia } from "../mediaStorage";
+import { deleteMedia, listMedia } from "../mediaStorage";
 
 export function friendlyError(err: unknown): string {
   if (err instanceof Error) {
@@ -25,39 +25,74 @@ export function friendlyError(err: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-async function cleanupUnreferencedMedia(
+function mediaIdsFromSettings(
   settings: Partial<PresentationSettings> | null | undefined,
-): Promise<void> {
-  const mediaIds = [
-    settings?.backgroundImageId,
-    settings?.backgroundVideoId,
-  ].filter((id): id is string => Boolean(id));
-  if (mediaIds.length === 0) return;
+) {
+  return [settings?.backgroundImageId, settings?.backgroundVideoId].filter(
+    (id): id is string => Boolean(id),
+  );
+}
 
+export async function collectReferencedMediaIds(): Promise<Set<string>> {
   const supabase = getSupabaseBrowserClient();
   const [presentations, worshipSets] = await Promise.all([
     supabase.from("presentations").select("settings"),
     supabase.from("worship_sets").select("settings"),
   ]);
-  if (presentations.error || worshipSets.error) return;
+  if (presentations.error) throw new Error(friendlyError(presentations.error));
+  if (worshipSets.error) throw new Error(friendlyError(worshipSets.error));
 
   const referencedIds = new Set<string>();
   for (const row of [
     ...(presentations.data ?? []),
     ...(worshipSets.data ?? []),
   ]) {
-    const rowSettings = (row as { settings?: Partial<PresentationSettings> })
-      .settings;
-    if (rowSettings?.backgroundImageId)
-      referencedIds.add(rowSettings.backgroundImageId);
-    if (rowSettings?.backgroundVideoId)
-      referencedIds.add(rowSettings.backgroundVideoId);
+    for (const id of mediaIdsFromSettings(
+      (row as { settings?: Partial<PresentationSettings> }).settings,
+    )) {
+      referencedIds.add(id);
+    }
+  }
+  return referencedIds;
+}
+
+export async function cleanupUnreferencedMedia(
+  settings: Partial<PresentationSettings> | null | undefined,
+): Promise<void> {
+  const mediaIds = mediaIdsFromSettings(settings);
+  if (mediaIds.length === 0) return;
+
+  let referencedIds: Set<string>;
+  try {
+    referencedIds = await collectReferencedMediaIds();
+  } catch {
+    return;
   }
 
   await Promise.all(
     mediaIds
       .filter((id) => !referencedIds.has(id))
       .map((id) => deleteMedia(id).catch(() => undefined)),
+  );
+}
+
+export async function cleanupOrphanedMedia(
+  gracePeriodMs = 24 * 60 * 60 * 1000,
+): Promise<void> {
+  let referencedIds: Set<string>;
+  try {
+    referencedIds = await collectReferencedMediaIds();
+  } catch {
+    return;
+  }
+  const cutoff = Date.now() - gracePeriodMs;
+  const records = await listMedia();
+  await Promise.all(
+    records
+      .filter(
+        (record) => record.createdAt < cutoff && !referencedIds.has(record.id),
+      )
+      .map((record) => deleteMedia(record.id).catch(() => undefined)),
   );
 }
 /* ------------------------------- profile -------------------------------- */
@@ -143,25 +178,15 @@ export async function updateSong(
 }
 
 export async function deleteSong(songId: string): Promise<void> {
-  const { data: presentation, error: presentationError } =
-    await getSupabaseBrowserClient()
-      .from("presentations")
-      .select("settings")
-      .eq("song_id", songId)
-      .maybeSingle();
-  if (presentationError) throw new Error(friendlyError(presentationError));
   const supabase = getSupabaseBrowserClient();
-  for (const table of [
-    "song_sections",
-    "presentations",
-    "worship_set_songs",
-  ] as const) {
-    const { error } = await supabase.from(table).delete().eq("song_id", songId);
-    if (error) throw new Error(friendlyError(error));
-  }
-  const { error } = await supabase.from("songs").delete().eq("id", songId);
+  const { data, error } = await supabase.rpc("delete_song_with_dependencies", {
+    p_song_id: songId,
+  });
   if (error) throw new Error(friendlyError(error));
-  await cleanupUnreferencedMedia(presentation?.settings);
+  await cleanupUnreferencedMedia(
+    (data as { presentation_settings?: Partial<PresentationSettings> })
+      ?.presentation_settings,
+  );
 }
 
 /* ------------------------------- sections ------------------------------- */
@@ -261,6 +286,13 @@ export async function upsertPresentation(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Your session has expired. Please sign in again.");
 
+  const { data: previous, error: previousError } = await supabase
+    .from("presentations")
+    .select("settings")
+    .eq("song_id", songId)
+    .maybeSingle();
+  if (previousError) throw new Error(friendlyError(previousError));
+
   const persistentSettings = {
     ...settings,
     backgroundImageUrl: null,
@@ -278,7 +310,11 @@ export async function upsertPresentation(
     )
     .select()
     .single();
-  if (error) throw new Error(friendlyError(error));
+  if (error) {
+    await cleanupUnreferencedMedia(persistentSettings);
+    throw new Error(friendlyError(error));
+  }
+  await cleanupUnreferencedMedia(previous?.settings);
   return data as Presentation;
 }
 
@@ -309,6 +345,21 @@ export async function fetchWorshipSets(): Promise<WorshipSet[]> {
     settings: normalizeSettings((row as WorshipSet).settings),
     add_song_title_slides: (row as WorshipSet).add_song_title_slides ?? true,
   }));
+}
+
+export async function fetchWorshipSetSongCounts(): Promise<
+  Record<string, number>
+> {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("worship_set_songs")
+    .select("worship_set_id");
+  if (error) throw new Error(friendlyError(error));
+  return (data ?? []).reduce<Record<string, number>>((counts, row) => {
+    const worshipSetId = (row as { worship_set_id: string }).worship_set_id;
+    counts[worshipSetId] = (counts[worshipSetId] ?? 0) + 1;
+    return counts;
+  }, {});
 }
 
 export async function fetchWorshipSet(id: string): Promise<WorshipSet | null> {
@@ -368,6 +419,15 @@ export async function updateWorshipSet(
   >,
 ): Promise<void> {
   const supabase = getSupabaseBrowserClient();
+  const { data: previous, error: previousError } = patch.settings
+    ? await supabase
+        .from("worship_sets")
+        .select("settings")
+        .eq("id", id)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (previousError) throw new Error(friendlyError(previousError));
+
   const persistentPatch = patch.settings
     ? {
         ...patch,
@@ -382,25 +442,25 @@ export async function updateWorshipSet(
     .from("worship_sets")
     .update(persistentPatch)
     .eq("id", id);
-  if (error) throw new Error(friendlyError(error));
+  if (error) {
+    if (persistentPatch.settings)
+      await cleanupUnreferencedMedia(persistentPatch.settings);
+    throw new Error(friendlyError(error));
+  }
+  if (previous?.settings) await cleanupUnreferencedMedia(previous.settings);
 }
 
 export async function deleteWorshipSet(id: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
-  const { data: worshipSet, error: fetchError } = await supabase
-    .from("worship_sets")
-    .select("settings")
-    .eq("id", id)
-    .maybeSingle();
-  if (fetchError) throw new Error(friendlyError(fetchError));
-  const { error: songsError } = await supabase
-    .from("worship_set_songs")
-    .delete()
-    .eq("worship_set_id", id);
-  if (songsError) throw new Error(friendlyError(songsError));
-  const { error } = await supabase.from("worship_sets").delete().eq("id", id);
+  const { data, error } = await supabase.rpc(
+    "delete_worship_set_with_dependencies",
+    { p_worship_set_id: id },
+  );
   if (error) throw new Error(friendlyError(error));
-  await cleanupUnreferencedMedia(worshipSet?.settings);
+  await cleanupUnreferencedMedia(
+    (data as { worship_set_settings?: Partial<PresentationSettings> })
+      ?.worship_set_settings,
+  );
 }
 
 export async function removeSongFromWorshipSet(
@@ -428,23 +488,21 @@ export async function saveWorshipSetSongs(
   if (error) throw new Error(friendlyError(error));
 }
 
+/**
+ * Internal duplication API. The current UI does not expose duplication, but
+ * callers can use this atomic operation without leaving partial sets behind.
+ */
 export async function duplicateWorshipSet(id: string): Promise<WorshipSet> {
-  const source = await fetchWorshipSet(id);
-  if (!source) throw new Error("Worship set not found.");
-  const songs = await fetchWorshipSetSongs(id);
-  const copy = await createWorshipSet(`${source.name} — Copy`);
-  await updateWorshipSet(copy.id, {
-    settings: source.settings,
-    add_song_title_slides: source.add_song_title_slides,
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc("duplicate_worship_set", {
+    p_worship_set_id: id,
   });
-  await saveWorshipSetSongs(
-    copy.id,
-    songs.map((item) => item.song_id),
-  );
+  if (error) throw new Error(friendlyError(error));
+  const copied = (data as { worship_set: WorshipSet }).worship_set;
   return {
-    ...copy,
-    settings: source.settings,
-    add_song_title_slides: source.add_song_title_slides,
+    ...copied,
+    settings: normalizeSettings(copied.settings),
+    add_song_title_slides: copied.add_song_title_slides ?? true,
   };
 }
 

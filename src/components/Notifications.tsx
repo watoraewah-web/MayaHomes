@@ -25,6 +25,7 @@ type ConfirmationRequest = {
   confirmLabel?: string;
   cancelLabel?: string;
   resolve: (confirmed: boolean) => void;
+  trigger: HTMLElement | null;
 };
 
 type NotificationContextValue = {
@@ -60,6 +61,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [confirmation, setConfirmation] = useState<ConfirmationRequest | null>(
     null,
   );
+  const confirmationRef = useRef<ConfirmationRequest | null>(null);
+  const confirmationQueue = useRef<ConfirmationRequest[]>([]);
+  const confirmationDialogRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(0);
 
   const dismiss = useCallback((id: number) => {
@@ -77,17 +81,80 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   );
 
   const requestConfirmation = useCallback(
-    (request: Omit<ConfirmationRequest, "resolve">) =>
+    (request: Omit<ConfirmationRequest, "resolve" | "trigger">) =>
       new Promise<boolean>((resolve) => {
-        setConfirmation({ ...request, resolve });
+        const pending = {
+          ...request,
+          resolve,
+          trigger:
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null,
+        };
+        if (confirmationRef.current) {
+          confirmationQueue.current.push(pending);
+        } else {
+          confirmationRef.current = pending;
+          setConfirmation(pending);
+        }
       }),
     [],
   );
 
-  function finishConfirmation(confirmed: boolean) {
-    confirmation?.resolve(confirmed);
-    setConfirmation(null);
-  }
+  const finishConfirmation = useCallback((confirmed: boolean) => {
+    const current = confirmationRef.current;
+    if (!current) return;
+    current.resolve(confirmed);
+    if (current.trigger?.isConnected) current.trigger.focus();
+    const next = confirmationQueue.current.shift() ?? null;
+    confirmationRef.current = next;
+    setConfirmation(next);
+  }, []);
+
+  useEffect(() => {
+    if (!confirmation) return;
+    const frame = window.requestAnimationFrame(() => {
+      const firstControl =
+        confirmationDialogRef.current?.querySelector<HTMLElement>(
+          "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+        );
+      (firstControl ?? confirmationDialogRef.current)?.focus();
+    });
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        finishConfirmation(false);
+        return;
+      }
+      if (event.key !== "Tab" || !confirmationDialogRef.current) return;
+      const controls = Array.from(
+        confirmationDialogRef.current.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+        ),
+      );
+      if (controls.length === 0) {
+        event.preventDefault();
+        confirmationDialogRef.current.focus();
+        return;
+      }
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [confirmation, finishConfirmation]);
 
   return (
     <NotificationContext.Provider value={{ notify, requestConfirmation }}>
@@ -138,6 +205,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       {confirmation ? (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-zinc-900/40 p-4">
           <div
+            ref={confirmationDialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="maya-confirmation-title"

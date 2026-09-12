@@ -52,6 +52,22 @@ npm run dev
 
 Open http://localhost:3000. For a production build: `npm run build && npm start`.
 
+## Browser tests
+
+Install the Playwright Chromium browser once, then run the browser smoke tests:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+Public landing and authentication rendering tests run without Supabase credentials.
+Protected-route and authenticated workflow tests require the local Supabase
+variables above. Tests that exercise authenticated data use a dedicated test
+account through `E2E_EMAIL` and `E2E_PASSWORD`; editor and Presentation Mode
+coverage additionally use `E2E_SONG_ID` and `E2E_WORSHIP_SET_ID`. These tests run
+against the local dev server and should not use production records.
+
 ## The workflow
 
 1. **Sign up / Sign in** — email + password authentication via Supabase Auth.

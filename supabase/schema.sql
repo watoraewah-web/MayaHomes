@@ -1,4 +1,4 @@
--- MAYA database schema
+-- WFICM database schema
 -- Run this once in the Supabase SQL Editor for your project.
 
 -- Extensions ---------------------------------------------------------------
@@ -209,6 +209,143 @@ begin
 end;
 $$;
 
+-- Atomic song deletion. Foreign-key cascades remove sections, presentations,
+-- and worship-set links in the same transaction as the parent deletion.
+create or replace function public.delete_song_with_dependencies(
+  p_song_id uuid
+)
+returns jsonb
+language plpgsql
+set search_path = public
+as $$
+declare
+  presentation_settings jsonb;
+  deleted_song public.songs;
+begin
+  if not exists (
+    select 1 from public.songs
+    where id = p_song_id and user_id = auth.uid()
+  ) then
+    raise exception 'Song not found';
+  end if;
+
+  select p.settings into presentation_settings
+  from public.presentations p
+  where p.song_id = p_song_id;
+
+  delete from public.songs
+  where id = p_song_id and user_id = auth.uid()
+  returning * into deleted_song;
+
+  return jsonb_build_object(
+    'presentation_settings', presentation_settings
+  );
+end;
+$$;
+
+-- Atomic worship-set deletion. The foreign key cascade removes its song links.
+create or replace function public.delete_worship_set_with_dependencies(
+  p_worship_set_id uuid
+)
+returns jsonb
+language plpgsql
+set search_path = public
+as $$
+declare
+  worship_set_settings jsonb;
+  deleted_set public.worship_sets;
+begin
+  if not exists (
+    select 1 from public.worship_sets
+    where id = p_worship_set_id and user_id = auth.uid()
+  ) then
+    raise exception 'Worship set not found';
+  end if;
+
+  select ws.settings into worship_set_settings
+  from public.worship_sets ws
+  where ws.id = p_worship_set_id;
+
+  delete from public.worship_sets
+  where id = p_worship_set_id and user_id = auth.uid()
+  returning * into deleted_set;
+
+  return jsonb_build_object(
+    'worship_set_settings', worship_set_settings
+  );
+end;
+$$;
+
+-- Atomic Worship Set duplication. Any failure rolls back the new parent and
+-- all copied links because the function runs in one database transaction.
+create or replace function public.duplicate_worship_set(
+  p_worship_set_id uuid
+)
+returns jsonb
+language plpgsql
+set search_path = public
+as $$
+declare
+  source_set public.worship_sets;
+  copied_set public.worship_sets;
+  source_song_count integer;
+  copied_song_count integer;
+begin
+  select * into source_set
+  from public.worship_sets
+  where id = p_worship_set_id and user_id = auth.uid();
+
+  if not found then
+    raise exception 'Worship set not found';
+  end if;
+
+  insert into public.worship_sets (
+    user_id,
+    name,
+    settings,
+    add_song_title_slides
+  )
+  values (
+    auth.uid(),
+    source_set.name || ' — Copy',
+    source_set.settings,
+    source_set.add_song_title_slides
+  )
+  returning * into copied_set;
+
+  insert into public.worship_set_songs (
+    worship_set_id,
+    song_id,
+    song_order
+  )
+  select
+    copied_set.id,
+    wss.song_id,
+    wss.song_order
+  from public.worship_set_songs wss
+  join public.songs s on s.id = wss.song_id
+  where wss.worship_set_id = source_set.id
+    and s.user_id = auth.uid()
+  order by wss.song_order;
+
+  select count(*) into source_song_count
+  from public.worship_set_songs
+  where worship_set_id = source_set.id;
+
+  select count(*) into copied_song_count
+  from public.worship_set_songs
+  where worship_set_id = copied_set.id;
+
+  if copied_song_count <> source_song_count then
+    raise exception 'Worship set contains unavailable songs';
+  end if;
+
+  return jsonb_build_object(
+    'worship_set', to_jsonb(copied_set)
+  );
+end;
+$$;
+
 -- updated_at trigger --------------------------------------------------------
 
 create or replace function public.set_updated_at()
@@ -294,7 +431,19 @@ create policy "song_sections_all_own" on public.song_sections
 
 drop policy if exists "presentations_all_own" on public.presentations;
 create policy "presentations_all_own" on public.presentations
-  for all using (auth.uid () = user_id) with check (auth.uid () = user_id);
+  for all using (
+    auth.uid () = user_id
+    and exists (
+      select 1 from public.songs s
+      where s.id = song_id and s.user_id = auth.uid ()
+    )
+  ) with check (
+    auth.uid () = user_id
+    and exists (
+      select 1 from public.songs s
+      where s.id = song_id and s.user_id = auth.uid ()
+    )
+  );
 
 drop policy if exists "worship_sets_all_own" on public.worship_sets;
 create policy "worship_sets_all_own" on public.worship_sets

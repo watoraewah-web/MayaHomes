@@ -13,7 +13,6 @@ interface StoredMedia {
   blob: Blob;
   createdAt: number;
 }
-
 function getDatabase(): Promise<IDBDatabase> {
   if (typeof indexedDB === "undefined") {
     return Promise.reject(new Error("IndexedDB is not available."));
@@ -92,6 +91,24 @@ export async function getMedia(id: string): Promise<StoredMedia | null> {
   }
 }
 
+export async function listMedia(): Promise<StoredMedia[]> {
+  let database: IDBDatabase | null = null;
+  try {
+    database = await getDatabase();
+    const records = await requestResult<StoredMedia[]>(
+      database
+        .transaction(STORE_NAME, "readonly")
+        .objectStore(STORE_NAME)
+        .getAll(),
+    );
+    return (records ?? []).filter((record) => record.blob instanceof Blob);
+  } catch {
+    return [];
+  } finally {
+    database?.close();
+  }
+}
+
 export async function deleteMedia(
   id: string | null | undefined,
 ): Promise<void> {
@@ -139,13 +156,4 @@ export async function resolvePresentationMedia(
     },
     revoke: () => urls.forEach((url) => URL.revokeObjectURL(url)),
   };
-}
-
-export async function deleteMediaForSettings(
-  settings: Partial<PresentationSettings> | null | undefined,
-): Promise<void> {
-  await Promise.all([
-    deleteMedia(settings?.backgroundImageId),
-    deleteMedia(settings?.backgroundVideoId),
-  ]);
 }
