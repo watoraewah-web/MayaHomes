@@ -1,4 +1,5 @@
 import { PresentationSettings } from "./types";
+import { getPresentationPreset } from "./presentationPresets";
 
 const DB_NAME = "wficm-local-media";
 const DB_VERSION = 1;
@@ -127,11 +128,13 @@ export async function resolvePresentationMedia(
   if (imageUrl) urls.push(imageUrl);
   const videoUrl = await resolveMediaUrl(settings.backgroundVideoId);
   if (videoUrl) urls.push(videoUrl);
+  const presetUrl =
+    getPresentationPreset(settings.backgroundPresetId)?.asset ?? null;
 
   return {
     settings: {
       ...settings,
-      backgroundImageUrl: imageUrl,
+      backgroundImageUrl: imageUrl ?? presetUrl,
       backgroundVideoUrl: videoUrl,
     },
     revoke: () => urls.forEach((url) => URL.revokeObjectURL(url)),

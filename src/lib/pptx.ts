@@ -9,6 +9,7 @@ import {
   SLIDE_DIMENSIONS,
 } from "./slides";
 import { getMedia } from "./mediaStorage";
+import { getPresentationPreset } from "./presentationPresets";
 
 async function toDataUrl(url: string): Promise<string> {
   const res = await fetch(url);
@@ -111,7 +112,9 @@ async function writePowerPoint({
 
   const hasImageBackground =
     settings.backgroundType === "image" &&
-    (settings.backgroundImageUrl || settings.backgroundImageId);
+    (settings.backgroundImageUrl ||
+      settings.backgroundImageId ||
+      settings.backgroundPresetId);
   let bgDataUrl: string | null = null;
   if (hasImageBackground) {
     let temporaryUrl: string | null = null;
@@ -123,6 +126,10 @@ async function writePowerPoint({
           temporaryUrl = URL.createObjectURL(media.blob);
           imageUrl = temporaryUrl;
         }
+      }
+      if (!imageUrl && settings.backgroundPresetId) {
+        imageUrl =
+          getPresentationPreset(settings.backgroundPresetId)?.asset ?? null;
       }
       if (imageUrl) bgDataUrl = await toDataUrl(imageUrl);
     } catch {

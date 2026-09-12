@@ -10,6 +10,10 @@ import { useNotifications } from "@/components/Notifications";
 import { Button, Input, Label, Select } from "@/components/ui";
 import { ImageIcon, UploadIcon } from "@/components/icons";
 import { deleteMedia, revokeObjectUrl, saveMedia } from "@/lib/mediaStorage";
+import {
+  applyPresentationPreset,
+  PRESENTATION_PRESETS,
+} from "@/lib/presentationPresets";
 
 const FONT_FAMILIES = [
   "Arial",
@@ -139,6 +143,7 @@ export function SettingsPanel({
         kind === "image"
           ? {
               backgroundType: "image",
+              backgroundPresetId: null,
               backgroundImageId: id,
               backgroundImageUrl: url,
               backgroundVideoId: null,
@@ -146,6 +151,7 @@ export function SettingsPanel({
             }
           : {
               backgroundType: "video",
+              backgroundPresetId: null,
               backgroundVideoId: id,
               backgroundVideoUrl: url,
               backgroundImageId: null,
@@ -165,6 +171,16 @@ export function SettingsPanel({
     onChange({ textColor: color });
   }
 
+  function selectPreset(id: string) {
+    const patch = applyPresentationPreset(id);
+    if (!patch) return;
+    revokeObjectUrl(settings.backgroundImageUrl);
+    revokeObjectUrl(settings.backgroundVideoUrl);
+    if (mediaUrlRef.current) revokeObjectUrl(mediaUrlRef.current);
+    mediaUrlRef.current = null;
+    onChange(patch);
+  }
+
   async function removeMedia() {
     await Promise.all([
       deleteMedia(settings.backgroundImageId),
@@ -178,6 +194,7 @@ export function SettingsPanel({
     mediaUrlRef.current = null;
     onChange({
       backgroundType: "solid",
+      backgroundPresetId: null,
       backgroundImageId: null,
       backgroundVideoId: null,
       backgroundImageUrl: null,
@@ -189,6 +206,37 @@ export function SettingsPanel({
     <div
       className={`${scrollable ? "max-h-[calc(100vh-10rem)] overflow-y-auto" : ""} rounded-lg border border-zinc-200 bg-white shadow-card`}
     >
+      <Group title="Preset Themes">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {PRESENTATION_PRESETS.map((preset) => {
+            const selected = settings.backgroundPresetId === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => selectPreset(preset.id)}
+                className={`focus-ring overflow-hidden rounded-md border text-left transition-colors ${
+                  selected
+                    ? "border-zinc-900 ring-1 ring-zinc-900"
+                    : "border-zinc-200 hover:border-zinc-500"
+                }`}
+                aria-pressed={selected}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={preset.asset}
+                  alt=""
+                  className="h-14 w-full object-cover"
+                />
+                <span className="block truncate px-2 py-1.5 text-[11px] font-medium text-zinc-700">
+                  {preset.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Group>
+
       <Group title="Screen">
         <SegmentedControl
           ariaLabel="Aspect ratio"
@@ -342,7 +390,12 @@ export function SettingsPanel({
             { value: "image", label: "Image" },
             { value: "video", label: "Video" },
           ]}
-          onChange={(v) => onChange({ backgroundType: v })}
+          onChange={(v) =>
+            onChange({
+              backgroundType: v,
+              ...(v === "solid" ? { backgroundPresetId: null } : {}),
+            })
+          }
         />
 
         {settings.backgroundType === "solid" ? (
