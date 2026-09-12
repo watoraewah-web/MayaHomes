@@ -130,21 +130,28 @@ html[data-theme="dark"] .hover\:text-zinc-900:hover {
 }
 
 html[data-theme="dark"] .auth-page {
-  background-color: #fff !important;
-  color: #18181b !important;
+  background-color: #27272a !important;
+  color: #f4f4f5 !important;
 }
 
-html[data-theme="dark"] .auth-page .bg-white {
-  background-color: #fff !important;
+html[data-theme="dark"] .auth-page > div,
+html[data-theme="dark"] .auth-page section,
+html[data-theme="dark"] .auth-page aside,
+html[data-theme="dark"] .auth-page input {
+  background-color: #27272a !important;
 }
 
-html[data-theme="dark"] .auth-page .text-zinc-900,
-html[data-theme="dark"] .auth-page .text-zinc-950 {
-  color: #18181b !important;
+html[data-theme="dark"] .auth-page input {
+  border-bottom-color: #52525b;
 }
 
-html[data-theme="dark"] .auth-page .text-zinc-500 {
-  color: #71717a !important;
+html[data-theme="dark"] .auth-page input:hover {
+  border-bottom-color: #a1a1aa;
+}
+
+html[data-theme="dark"] .auth-page input:focus,
+html[data-theme="dark"] .auth-page input:focus-visible {
+  border-bottom-color: #f4f4f5;
 }
 
 @media (max-width: 1023px) {
