@@ -52,6 +52,15 @@ npm run dev
 
 Open http://localhost:3000. For a production build: `npm run build && npm start`.
 
+### Offline use
+
+After signing in while online, WFICM caches the app shell and the read data you
+visit in the browser. Previously visited dashboard, song, presentation, and
+worship-set screens can then be reopened offline using the same signed-in
+session. The app shows an offline status bar and uses the last saved data when
+Supabase cannot be reached. Creating, editing, and deleting records still
+requires an internet connection; those changes are not queued for sync.
+
 ## Browser tests
 
 Install the Playwright Chromium browser once, then run the browser smoke tests:

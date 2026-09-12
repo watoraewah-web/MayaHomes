@@ -188,8 +188,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     });
 
     supabase.auth
-      .getUser()
-      .then(({ data }) => applyUser(data.user))
+      .getSession()
+      .then(({ data }) => applyUser(data.session?.user ?? null))
       .catch(() => {
         if (!active) return;
         setSessionError(true);

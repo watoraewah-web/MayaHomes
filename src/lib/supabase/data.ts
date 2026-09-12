@@ -14,6 +14,7 @@ import {
 } from "../types";
 import { ParsedSection } from "../parser";
 import { deleteMedia, listMedia } from "../mediaStorage";
+import { withOfflineCache } from "../offlineStore";
 
 export function friendlyError(err: unknown): string {
   if (err instanceof Error) {
@@ -98,14 +99,16 @@ export async function cleanupOrphanedMedia(
 /* ------------------------------- profile -------------------------------- */
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, created_at")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw new Error(friendlyError(error));
-  return data ?? null;
+  return withOfflineCache(`profile:${userId}`, async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, created_at")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) throw new Error(friendlyError(error));
+    return data ?? null;
+  });
 }
 
 export async function updateProfile(
@@ -123,24 +126,28 @@ export async function updateProfile(
 /* --------------------------------- songs -------------------------------- */
 
 export async function fetchSongs(): Promise<Song[]> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("songs")
-    .select("*")
-    .order("updated_at", { ascending: false });
-  if (error) throw new Error(friendlyError(error));
-  return (data ?? []) as Song[];
+  return withOfflineCache("songs", async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("songs")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(friendlyError(error));
+    return (data ?? []) as Song[];
+  });
 }
 
 export async function fetchSong(songId: string): Promise<Song | null> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("songs")
-    .select("*")
-    .eq("id", songId)
-    .maybeSingle();
-  if (error) throw new Error(friendlyError(error));
-  return (data as Song) ?? null;
+  return withOfflineCache(`song:${songId}`, async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("songs")
+      .select("*")
+      .eq("id", songId)
+      .maybeSingle();
+    if (error) throw new Error(friendlyError(error));
+    return (data as Song) ?? null;
+  });
 }
 
 export async function createSong(input: {
@@ -192,32 +199,39 @@ export async function deleteSong(songId: string): Promise<void> {
 /* ------------------------------- sections ------------------------------- */
 
 export async function fetchSections(songId: string): Promise<SongSection[]> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("song_sections")
-    .select("*")
-    .eq("song_id", songId)
-    .order("section_order", { ascending: true });
-  if (error) throw new Error(friendlyError(error));
-  return (data ?? []) as SongSection[];
+  return withOfflineCache(`sections:${songId}`, async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("song_sections")
+      .select("*")
+      .eq("song_id", songId)
+      .order("section_order", { ascending: true });
+    if (error) throw new Error(friendlyError(error));
+    return (data ?? []) as SongSection[];
+  });
 }
 
 export async function fetchSectionsForSongs(
   songIds: string[],
 ): Promise<Record<string, SongSection[]>> {
   if (songIds.length === 0) return {};
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("song_sections")
-    .select("*")
-    .in("song_id", songIds)
-    .order("section_order", { ascending: true });
-  if (error) throw new Error(friendlyError(error));
-  return (data ?? []).reduce<Record<string, SongSection[]>>((grouped, row) => {
-    const section = row as SongSection;
-    (grouped[section.song_id] ??= []).push(section);
-    return grouped;
-  }, {});
+  return withOfflineCache(`sections:${songIds.sort().join(",")}`, async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("song_sections")
+      .select("*")
+      .in("song_id", songIds)
+      .order("section_order", { ascending: true });
+    if (error) throw new Error(friendlyError(error));
+    return (data ?? []).reduce<Record<string, SongSection[]>>(
+      (grouped, row) => {
+        const section = row as SongSection;
+        (grouped[section.song_id] ??= []).push(section);
+        return grouped;
+      },
+      {},
+    );
+  });
 }
 
 /**
@@ -242,38 +256,42 @@ export async function saveSections(
 export async function fetchPresentationForSong(
   songId: string,
 ): Promise<Presentation | null> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("presentations")
-    .select("*")
-    .eq("song_id", songId)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(friendlyError(error));
-  if (!data) return null;
-  return {
-    ...(data as Presentation),
-    settings: normalizeSettings(data.settings),
-  };
+  return withOfflineCache(`presentation:${songId}`, async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("presentations")
+      .select("*")
+      .eq("song_id", songId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(friendlyError(error));
+    if (!data) return null;
+    return {
+      ...(data as Presentation),
+      settings: normalizeSettings(data.settings),
+    };
+  });
 }
 
 export async function fetchPresentations(): Promise<
   (Presentation & { song: Song | null })[]
 > {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("presentations")
-    .select(
-      "*, song:songs(id, title, artist, raw_lyrics, user_id, created_at, updated_at)",
-    )
-    .order("updated_at", { ascending: false });
-  if (error) throw new Error(friendlyError(error));
-  return (data ?? []).map((row) => ({
-    ...(row as unknown as Presentation),
-    settings: normalizeSettings((row as unknown as Presentation).settings),
-    song: (row as unknown as { song: Song | null }).song ?? null,
-  }));
+  return withOfflineCache("presentations", async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("presentations")
+      .select(
+        "*, song:songs(id, title, artist, raw_lyrics, user_id, created_at, updated_at)",
+      )
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(friendlyError(error));
+    return (data ?? []).map((row) => ({
+      ...(row as unknown as Presentation),
+      settings: normalizeSettings((row as unknown as Presentation).settings),
+      song: (row as unknown as { song: Song | null }).song ?? null,
+    }));
+  });
 }
 
 export async function upsertPresentation(
@@ -334,63 +352,71 @@ export async function deletePresentation(id: string): Promise<void> {
 /* ---------------------------- worship sets ----------------------------- */
 
 export async function fetchWorshipSets(): Promise<WorshipSet[]> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("worship_sets")
-    .select("*")
-    .order("updated_at", { ascending: false });
-  if (error) throw new Error(friendlyError(error));
-  return (data ?? []).map((row) => ({
-    ...(row as WorshipSet),
-    settings: normalizeSettings((row as WorshipSet).settings),
-    add_song_title_slides: (row as WorshipSet).add_song_title_slides ?? true,
-  }));
+  return withOfflineCache("worship-sets", async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("worship_sets")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(friendlyError(error));
+    return (data ?? []).map((row) => ({
+      ...(row as WorshipSet),
+      settings: normalizeSettings((row as WorshipSet).settings),
+      add_song_title_slides: (row as WorshipSet).add_song_title_slides ?? true,
+    }));
+  });
 }
 
 export async function fetchWorshipSetSongCounts(): Promise<
   Record<string, number>
 > {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("worship_set_songs")
-    .select("worship_set_id");
-  if (error) throw new Error(friendlyError(error));
-  return (data ?? []).reduce<Record<string, number>>((counts, row) => {
-    const worshipSetId = (row as { worship_set_id: string }).worship_set_id;
-    counts[worshipSetId] = (counts[worshipSetId] ?? 0) + 1;
-    return counts;
-  }, {});
+  return withOfflineCache("worship-set-song-counts", async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("worship_set_songs")
+      .select("worship_set_id");
+    if (error) throw new Error(friendlyError(error));
+    return (data ?? []).reduce<Record<string, number>>((counts, row) => {
+      const worshipSetId = (row as { worship_set_id: string }).worship_set_id;
+      counts[worshipSetId] = (counts[worshipSetId] ?? 0) + 1;
+      return counts;
+    }, {});
+  });
 }
 
 export async function fetchWorshipSet(id: string): Promise<WorshipSet | null> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("worship_sets")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw new Error(friendlyError(error));
-  if (!data) return null;
-  return {
-    ...(data as WorshipSet),
-    settings: normalizeSettings((data as WorshipSet).settings),
-    add_song_title_slides: (data as WorshipSet).add_song_title_slides ?? true,
-  };
+  return withOfflineCache(`worship-set:${id}`, async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("worship_sets")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(friendlyError(error));
+    if (!data) return null;
+    return {
+      ...(data as WorshipSet),
+      settings: normalizeSettings((data as WorshipSet).settings),
+      add_song_title_slides: (data as WorshipSet).add_song_title_slides ?? true,
+    };
+  });
 }
 
 export async function fetchWorshipSetSongs(
   id: string,
 ): Promise<WorshipSetSong[]> {
-  const supabase = getSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("worship_set_songs")
-    .select(
-      "*, song:songs(id, user_id, title, artist, raw_lyrics, created_at, updated_at)",
-    )
-    .eq("worship_set_id", id)
-    .order("song_order", { ascending: true });
-  if (error) throw new Error(friendlyError(error));
-  return (data ?? []) as WorshipSetSong[];
+  return withOfflineCache(`worship-set-songs:${id}`, async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("worship_set_songs")
+      .select(
+        "*, song:songs(id, user_id, title, artist, raw_lyrics, created_at, updated_at)",
+      )
+      .eq("worship_set_id", id)
+      .order("song_order", { ascending: true });
+    if (error) throw new Error(friendlyError(error));
+    return (data ?? []) as WorshipSetSong[];
+  });
 }
 
 export async function createWorshipSet(name: string): Promise<WorshipSet> {

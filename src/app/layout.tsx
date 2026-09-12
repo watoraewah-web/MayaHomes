@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { NotificationProvider } from "@/components/Notifications";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { OfflineSupport } from "@/components/OfflineSupport";
 
 export const metadata: Metadata = {
   title: "WFICM — Worship Lyrics to PowerPoint",
@@ -18,7 +19,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <NotificationProvider>{children}</NotificationProvider>
+          <NotificationProvider>
+            {children}
+            <OfflineSupport />
+          </NotificationProvider>
         </ThemeProvider>
       </body>
     </html>
