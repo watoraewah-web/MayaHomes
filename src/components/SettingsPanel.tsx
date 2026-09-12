@@ -99,10 +99,17 @@ export function SettingsPanel({
   scrollable?: boolean;
 }) {
   const [uploading, setUploading] = useState<"image" | "video" | null>(null);
+  const [maxLinesInput, setMaxLinesInput] = useState(
+    String(settings.maxLinesPerSlide),
+  );
   const { notify } = useNotifications();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setMaxLinesInput(String(settings.maxLinesPerSlide));
+  }, [settings.maxLinesPerSlide]);
 
   useEffect(
     () => () => {
@@ -290,15 +297,18 @@ export function SettingsPanel({
               type="number"
               min={1}
               max={12}
-              value={settings.maxLinesPerSlide}
-              onChange={(e) =>
-                onChange({
-                  maxLinesPerSlide: Math.min(
-                    12,
-                    Math.max(1, Number(e.target.value) || 4),
-                  ),
-                })
-              }
+              value={maxLinesInput}
+              onChange={(e) => setMaxLinesInput(e.target.value)}
+              onBlur={() => {
+                const parsed = Number(maxLinesInput);
+                const next = Number.isFinite(parsed)
+                  ? Math.min(12, Math.max(1, Math.round(parsed)))
+                  : settings.maxLinesPerSlide;
+                setMaxLinesInput(String(next));
+                if (next !== settings.maxLinesPerSlide) {
+                  onChange({ maxLinesPerSlide: next });
+                }
+              }}
             />
             <p className="mt-1 text-[11px] leading-snug text-zinc-400">
               Groups count original lyric lines. If a group does not fit, WFICM
