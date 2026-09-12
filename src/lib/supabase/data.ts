@@ -28,9 +28,10 @@ export function friendlyError(err: unknown): string {
 async function cleanupUnreferencedMedia(
   settings: Partial<PresentationSettings> | null | undefined,
 ): Promise<void> {
-  const mediaIds = [settings?.backgroundImageId, settings?.backgroundVideoId].filter(
-    (id): id is string => Boolean(id),
-  );
+  const mediaIds = [
+    settings?.backgroundImageId,
+    settings?.backgroundVideoId,
+  ].filter((id): id is string => Boolean(id));
   if (mediaIds.length === 0) return;
 
   const supabase = getSupabaseBrowserClient();
@@ -41,10 +42,16 @@ async function cleanupUnreferencedMedia(
   if (presentations.error || worshipSets.error) return;
 
   const referencedIds = new Set<string>();
-  for (const row of [...(presentations.data ?? []), ...(worshipSets.data ?? [])]) {
-    const rowSettings = (row as { settings?: Partial<PresentationSettings> }).settings;
-    if (rowSettings?.backgroundImageId) referencedIds.add(rowSettings.backgroundImageId);
-    if (rowSettings?.backgroundVideoId) referencedIds.add(rowSettings.backgroundVideoId);
+  for (const row of [
+    ...(presentations.data ?? []),
+    ...(worshipSets.data ?? []),
+  ]) {
+    const rowSettings = (row as { settings?: Partial<PresentationSettings> })
+      .settings;
+    if (rowSettings?.backgroundImageId)
+      referencedIds.add(rowSettings.backgroundImageId);
+    if (rowSettings?.backgroundVideoId)
+      referencedIds.add(rowSettings.backgroundVideoId);
   }
 
   await Promise.all(
@@ -136,11 +143,12 @@ export async function updateSong(
 }
 
 export async function deleteSong(songId: string): Promise<void> {
-  const { data: presentation, error: presentationError } = await getSupabaseBrowserClient()
-    .from("presentations")
-    .select("settings")
-    .eq("song_id", songId)
-    .maybeSingle();
+  const { data: presentation, error: presentationError } =
+    await getSupabaseBrowserClient()
+      .from("presentations")
+      .select("settings")
+      .eq("song_id", songId)
+      .maybeSingle();
   if (presentationError) throw new Error(friendlyError(presentationError));
   const supabase = getSupabaseBrowserClient();
   for (const table of [

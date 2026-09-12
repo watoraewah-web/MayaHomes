@@ -27,14 +27,16 @@ function getDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("Could not open local media storage."));
+    request.onerror = () =>
+      reject(request.error ?? new Error("Could not open local media storage."));
   });
 }
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("Local media storage request failed."));
+    request.onerror = () =>
+      reject(request.error ?? new Error("Local media storage request failed."));
   });
 }
 
@@ -75,7 +77,10 @@ export async function getMedia(id: string): Promise<StoredMedia | null> {
   try {
     database = await getDatabase();
     const record = await requestResult<StoredMedia | undefined>(
-      database.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(id),
+      database
+        .transaction(STORE_NAME, "readonly")
+        .objectStore(STORE_NAME)
+        .get(id),
     );
     if (!record || !(record.blob instanceof Blob)) return null;
     return record;
@@ -86,12 +91,17 @@ export async function getMedia(id: string): Promise<StoredMedia | null> {
   }
 }
 
-export async function deleteMedia(id: string | null | undefined): Promise<void> {
+export async function deleteMedia(
+  id: string | null | undefined,
+): Promise<void> {
   if (!id) return;
   const database = await getDatabase();
   try {
     await requestResult(
-      database.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(id),
+      database
+        .transaction(STORE_NAME, "readwrite")
+        .objectStore(STORE_NAME)
+        .delete(id),
     );
   } finally {
     database.close();

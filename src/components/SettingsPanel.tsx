@@ -9,11 +9,7 @@ import {
 import { useNotifications } from "@/components/Notifications";
 import { Button, Input, Label, Select } from "@/components/ui";
 import { ImageIcon, UploadIcon } from "@/components/icons";
-import {
-  deleteMedia,
-  revokeObjectUrl,
-  saveMedia,
-} from "@/lib/mediaStorage";
+import { deleteMedia, revokeObjectUrl, saveMedia } from "@/lib/mediaStorage";
 
 const FONT_FAMILIES = [
   "Arial",
@@ -130,8 +126,10 @@ export function SettingsPanel({
       const id = await saveMedia(file, kind);
       const url = URL.createObjectURL(file);
       const oldIds = [settings.backgroundImageId, settings.backgroundVideoId];
-      await Promise.all(oldIds.filter(Boolean).map((oldId) => deleteMedia(oldId))).catch(
-        () => notify("error", "The previous background could not be cleaned up."),
+      await Promise.all(
+        oldIds.filter(Boolean).map((oldId) => deleteMedia(oldId)),
+      ).catch(() =>
+        notify("error", "The previous background could not be cleaned up."),
       );
       revokeObjectUrl(settings.backgroundImageUrl);
       revokeObjectUrl(settings.backgroundVideoUrl);
@@ -171,7 +169,9 @@ export function SettingsPanel({
     await Promise.all([
       deleteMedia(settings.backgroundImageId),
       deleteMedia(settings.backgroundVideoId),
-    ]).catch(() => notify("error", "The local background could not be removed."));
+    ]).catch(() =>
+      notify("error", "The local background could not be removed."),
+    );
     revokeObjectUrl(settings.backgroundImageUrl);
     revokeObjectUrl(settings.backgroundVideoUrl);
     if (mediaUrlRef.current) revokeObjectUrl(mediaUrlRef.current);
