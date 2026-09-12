@@ -95,6 +95,29 @@ html[data-theme="dark"] .hover\:text-zinc-900:hover {
   }
 }
 
+.auth-artwork {
+  position: absolute;
+  inset: 0;
+  opacity: 0.92;
+}
+
+@media (max-width: 1023px) {
+  .auth-art-panel {
+    min-height: 15rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .auth-art-panel {
+    min-height: 9rem;
+  }
+
+  .auth-art-panel p {
+    bottom: 1rem;
+    left: 1.5rem;
+  }
+}
+
 /* Thin, neutral scrollbars for panel areas */
 * {
   scrollbar-width: thin;

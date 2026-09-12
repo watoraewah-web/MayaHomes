@@ -9,7 +9,7 @@ import {
 } from "@/lib/supabase/client";
 import { getSafeNextPath } from "@/lib/safeRedirect";
 import { Button, ErrorMessage, Input, Label } from "@/components/ui";
-import { MayaMark } from "@/components/icons";
+import { AuthLayout } from "@/components/AuthLayout";
 
 function SignInForm() {
   const router = useRouter();
@@ -87,42 +87,31 @@ function SignInForm() {
 export default function SignInPage() {
   const configured = isSupabaseConfigured();
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-y-auto bg-canvas px-4 py-10 sm:py-16">
-      <div className="w-full max-w-md">
-        <div className="mb-7 flex flex-col items-center gap-3">
-          <MayaMark className="h-16 w-16 text-zinc-900" />
-          <span className="text-sm font-semibold tracking-[0.28em] text-zinc-900">
-            WFICM
-          </span>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-card sm:p-8">
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
-            Welcome back
-          </h1>
-          <p className="mb-7 mt-2 text-sm leading-relaxed text-zinc-500">
-            Access your worship presentations.
-          </p>
-          {configured ? (
-            <Suspense fallback={null}>
-              <SignInForm />
-            </Suspense>
-          ) : (
-            <ErrorMessage>
-              Supabase is not configured. Add your project credentials to
-              .env.local and restart the app.
-            </ErrorMessage>
-          )}
-          <p className="mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-500">
-            No account yet?{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-zinc-900 underline underline-offset-2"
-            >
-              Create one
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+    <AuthLayout
+      title="Welcome back"
+      description="Access your worship presentations."
+      footer={
+        <p className="mt-8 border-t border-zinc-200 pt-5 text-sm text-zinc-500">
+          No account yet?{" "}
+          <Link
+            href="/signup"
+            className="font-medium text-zinc-900 underline underline-offset-4"
+          >
+            Create one
+          </Link>
+        </p>
+      }
+    >
+      {configured ? (
+        <Suspense fallback={null}>
+          <SignInForm />
+        </Suspense>
+      ) : (
+        <ErrorMessage>
+          Supabase is not configured. Add your project credentials to .env.local
+          and restart the app.
+        </ErrorMessage>
+      )}
+    </AuthLayout>
   );
 }
