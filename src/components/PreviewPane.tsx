@@ -10,7 +10,7 @@ import {
   ptToPx,
   LINE_HEIGHT,
 } from "@/lib/slides";
-import { Button, Select } from "@/components/ui";
+import { Button } from "@/components/ui";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -434,26 +434,6 @@ export function PreviewPane({
       {editable && current ? (
         <div className="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-card">
           <span className="mr-1 font-medium text-zinc-500">Text</span>
-          <Select
-            value={settings.fontFamily}
-            onChange={(event) =>
-              onSettingsChange?.({ fontFamily: event.target.value })
-            }
-            className="h-8 w-32 py-0 text-xs"
-            aria-label="Preview font family"
-          >
-            {[
-              "Arial",
-              "Calibri",
-              "Georgia",
-              "Helvetica",
-              "Tahoma",
-              "Times New Roman",
-              "Verdana",
-            ].map((font) => (
-              <option key={font}>{font}</option>
-            ))}
-          </Select>
           <input
             type="text"
             inputMode="decimal"

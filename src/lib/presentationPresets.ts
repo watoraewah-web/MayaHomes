@@ -23,7 +23,7 @@ export type PresentationPreset = {
 export const PRESENTATION_PRESETS: PresentationPreset[] = [
   {
     id: "classic-worship",
-    name: "Classic Worship",
+    name: "Cross at Dusk",
     asset: "/presets/classic-worship.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -41,7 +41,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "prayer",
-    name: "Prayer",
+    name: "Quiet Ocean",
     asset: "/presets/prayer.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -59,7 +59,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "youth",
-    name: "Youth",
+    name: "Starry Praise",
     asset: "/presets/youth.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -68,7 +68,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
       textColor: "#ffffff",
       fontWeight: "bold",
       textAlign: "center",
-      verticalPosition: "center",
+      verticalPosition: "bottom",
       maxLinesPerSlide: 4,
       showSectionLabel: false,
       backgroundType: "image",
@@ -77,7 +77,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "modern-worship",
-    name: "Modern Worship",
+    name: "Creative Witness",
     asset: "/presets/modern-worship.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -95,7 +95,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "minimal",
-    name: "Minimal",
+    name: "Midnight Sky",
     asset: "/presets/minimal.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -104,7 +104,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
       textColor: "#ffffff",
       fontWeight: "normal",
       textAlign: "center",
-      verticalPosition: "center",
+      verticalPosition: "bottom",
       maxLinesPerSlide: 4,
       showSectionLabel: false,
       backgroundType: "image",
@@ -113,7 +113,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "elegant",
-    name: "Elegant",
+    name: "Golden Meadow",
     asset: "/presets/elegant.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -131,7 +131,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "grace",
-    name: "Grace",
+    name: "Three Crosses",
     asset: "/presets/grace.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -140,7 +140,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
       textColor: "#ffffff",
       fontWeight: "normal",
       textAlign: "center",
-      verticalPosition: "center",
+      verticalPosition: "bottom",
       maxLinesPerSlide: 4,
       showSectionLabel: false,
       backgroundType: "image",
@@ -149,7 +149,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "sanctuary",
-    name: "Sanctuary",
+    name: "Warm Wood",
     asset: "/presets/sanctuary.jpg",
     settings: {
       aspectRatio: "16:9",
@@ -158,7 +158,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
       textColor: "#ffffff",
       fontWeight: "normal",
       textAlign: "center",
-      verticalPosition: "center",
+      verticalPosition: "bottom",
       maxLinesPerSlide: 4,
       showSectionLabel: false,
       backgroundType: "image",
@@ -167,7 +167,7 @@ export const PRESENTATION_PRESETS: PresentationPreset[] = [
   },
   {
     id: "praise",
-    name: "Praise",
+    name: "Hope at Sunrise",
     asset: "/presets/praise.jpg",
     settings: {
       aspectRatio: "16:9",
