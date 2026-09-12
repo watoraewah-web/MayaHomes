@@ -28,7 +28,7 @@ export default function LandingPage() {
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
-            <MayaMark className="text-zinc-900" />
+            <MayaMark className="h-7 w-7 text-zinc-900" />
             <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
               WFICM
             </span>

@@ -47,7 +47,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-2.5 border-b border-zinc-200 px-5">
-        <MayaMark className="h-10 w-10 text-zinc-900" />
+        <MayaMark className="h-7 w-7 text-zinc-900" />
         <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
           WFICM
         </span>
@@ -216,7 +216,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile top bar */}
       <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 lg:hidden">
         <div className="flex items-center gap-2.5">
-          <MayaMark className="h-10 w-10 text-zinc-900" />
+          <MayaMark className="h-7 w-7 text-zinc-900" />
           <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
             WFICM
           </span>

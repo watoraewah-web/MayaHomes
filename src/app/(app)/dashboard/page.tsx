@@ -116,9 +116,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
           Welcome to WFICM
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
@@ -126,10 +126,10 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="mb-10">
+      <div className="mb-8">
         <Button
           variant="primary"
-          size="lg"
+          size="md"
           icon={<PlusIcon />}
           onClick={() => router.push("/songs/new")}
         >
@@ -181,7 +181,7 @@ export default function DashboardPage() {
             {songs.slice(0, 10).map((song) => (
               <div
                 key={song.id}
-                className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
               >
                 <div className="flex min-w-0 items-start gap-3">
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-zinc-400">
@@ -244,7 +244,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <section className="mt-10">
+      <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             Recent Worship Sets
@@ -265,7 +265,7 @@ export default function DashboardPage() {
             {sets.slice(0, 5).map((set) => (
               <div
                 key={set.id}
-                className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
               >
                 <div>
                   <p className="text-sm font-medium text-zinc-900">
