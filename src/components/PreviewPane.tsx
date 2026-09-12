@@ -474,28 +474,42 @@ export function PreviewPane({
           >
             Bold
           </Button>
-          {(["left", "center", "right"] as const).map((align) => (
-            <Button
-              key={align}
-              size="sm"
-              variant={settings.textAlign === align ? "primary" : "secondary"}
-              onClick={() => onSettingsChange?.({ textAlign: align })}
-            >
-              {align}
-            </Button>
-          ))}
-          {(["top", "center", "bottom"] as const).map((position) => (
-            <Button
-              key={position}
-              size="sm"
-              variant={
-                settings.verticalPosition === position ? "primary" : "secondary"
-              }
-              onClick={() => onSettingsChange?.({ verticalPosition: position })}
-            >
-              {position}
-            </Button>
-          ))}
+          <div className="flex items-center gap-1.5 rounded-md bg-zinc-50 p-1">
+            <span className="px-1 text-[11px] font-medium text-zinc-400">
+              Align
+            </span>
+            {(["left", "center", "right"] as const).map((align) => (
+              <Button
+                key={align}
+                size="sm"
+                variant={settings.textAlign === align ? "primary" : "secondary"}
+                onClick={() => onSettingsChange?.({ textAlign: align })}
+              >
+                {align}
+              </Button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 rounded-md bg-zinc-50 p-1">
+            <span className="px-1 text-[11px] font-medium text-zinc-400">
+              Position
+            </span>
+            {(["top", "center", "bottom"] as const).map((position) => (
+              <Button
+                key={position}
+                size="sm"
+                variant={
+                  settings.verticalPosition === position
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={() =>
+                  onSettingsChange?.({ verticalPosition: position })
+                }
+              >
+                {position}
+              </Button>
+            ))}
+          </div>
           <span className="text-zinc-400">
             Click text to select, double-click to edit
           </span>

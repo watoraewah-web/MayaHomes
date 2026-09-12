@@ -190,7 +190,7 @@ export function SettingsPanel({
     revokeObjectUrl(settings.backgroundVideoUrl);
     if (mediaUrlRef.current) revokeObjectUrl(mediaUrlRef.current);
     mediaUrlRef.current = null;
-    onChange(patch);
+    onChange({ ...patch, verticalPosition: settings.verticalPosition });
   }
 
   async function removeMedia() {
