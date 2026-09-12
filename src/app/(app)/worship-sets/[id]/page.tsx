@@ -578,6 +578,7 @@ export default function WorshipSetEditorPage() {
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            data-tour="worship-set-name"
             className="border-transparent bg-transparent !px-0 text-xl font-semibold tracking-tight hover:border-zinc-200 focus:bg-white"
             aria-label="Worship set name"
           />
@@ -591,6 +592,7 @@ export default function WorshipSetEditorPage() {
             variant="secondary"
             icon={<PresentationsIcon />}
             onClick={() => router.push(`/worship-sets/${setId}?present=1`)}
+            data-tour="worship-set-present"
           >
             Present
           </Button>
@@ -621,7 +623,7 @@ export default function WorshipSetEditorPage() {
       ) : null}
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="min-w-0">
+        <div className="min-w-0" data-tour="worship-set-preview">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
@@ -639,6 +641,7 @@ export default function WorshipSetEditorPage() {
               variant="secondary"
               icon={<PlusIcon />}
               onClick={() => setShowAdd(true)}
+              data-tour="worship-set-add-songs"
             >
               Add Song
             </Button>
@@ -664,7 +667,10 @@ export default function WorshipSetEditorPage() {
               </div>
             </Card>
           ) : (
-            <Card className="divide-y divide-zinc-100">
+            <Card
+              className="divide-y divide-zinc-100"
+              data-tour="worship-set-order"
+            >
               {items.map((item, index) => {
                 const songId = item.song_id;
                 const draft = lyricsDrafts[songId] ?? [];
@@ -823,7 +829,7 @@ export default function WorshipSetEditorPage() {
               </Link>
             </div>
           ) : null}
-          <Card className="mt-6 p-5">
+          <Card className="mt-6 p-5" data-tour="worship-set-settings">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Presentation Settings
             </h2>

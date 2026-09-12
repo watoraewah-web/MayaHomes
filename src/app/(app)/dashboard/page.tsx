@@ -116,7 +116,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-8 sm:px-6 sm:py-9">
+    <div
+      className="mx-auto max-w-5xl px-5 py-8 sm:px-6 sm:py-9"
+      data-tour="dashboard-overview"
+    >
       <div className="mb-7">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
           Welcome to WFICM
@@ -126,7 +129,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="mb-9">
+      <div className="mb-9" data-tour="dashboard-create-song">
         <Button
           variant="primary"
           size="lg"
@@ -137,7 +140,7 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      <section>
+      <section data-tour="dashboard-recent-songs">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             Recent Songs
@@ -244,7 +247,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <section className="mt-9">
+      <section className="mt-9" data-tour="dashboard-recent-sets">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             Recent Worship Sets

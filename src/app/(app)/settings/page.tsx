@@ -87,7 +87,7 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      <Card className="p-6">
+      <Card className="p-6" data-tour="settings-profile">
         <div className="mb-5 flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-500">
             <UserIcon width={18} height={18} />
@@ -132,7 +132,7 @@ export default function SettingsPage() {
         </form>
       </Card>
 
-      <Card className="mt-4 p-6">
+      <Card className="mt-4 p-6" data-tour="settings-appearance">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900">Appearance</h2>
           <p className="mt-1 text-sm text-zinc-500">

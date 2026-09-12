@@ -93,6 +93,7 @@ export default function NewSongPage() {
             <Label htmlFor="title">Song Title</Label>
             <Input
               id="title"
+              data-tour="create-song-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter song title"
@@ -105,6 +106,7 @@ export default function NewSongPage() {
           <Label htmlFor="lyrics">Lyrics</Label>
           <Textarea
             id="lyrics"
+            data-tour="create-song-lyrics"
             value={lyrics}
             onChange={(e) => setLyrics(e.target.value)}
             onPaste={(e) => {
@@ -131,7 +133,10 @@ export default function NewSongPage() {
             Bridge. Blocks without a recognized label are kept as Uncategorized,
             so nothing is lost. Only paste lyrics you are authorized to use.
           </p>
-          <label className="mt-3 flex items-center gap-2 text-sm text-zinc-600">
+          <label
+            className="mt-3 flex items-center gap-2 text-sm text-zinc-600"
+            data-tour="create-song-duplicates"
+          >
             <input
               type="checkbox"
               checked={removeDuplicateLyrics}
@@ -180,6 +185,7 @@ export default function NewSongPage() {
             icon={<SparkIcon />}
             loading={creating}
             onClick={handleAnalyze}
+            data-tour="create-song-submit"
           >
             {creating ? "Analyzing Lyrics..." : "Analyze Lyrics"}
           </Button>

@@ -17,8 +17,8 @@ import {
   PresentationSettings,
   DEFAULT_SETTINGS,
 } from "@/lib/types";
-import { buildSlides, replaceSlideSource, Slide } from "@/lib/slides";
 import { resolvePresentationMedia } from "@/lib/mediaStorage";
+import { buildSlides, replaceSlideSource, Slide } from "@/lib/slides";
 import {
   EditorSection,
   SectionCard,
@@ -382,6 +382,7 @@ export default function SongEditorPage() {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              data-tour="song-editor-title"
               placeholder="Enter song title"
               className="border-transparent bg-transparent !px-0 text-xl font-semibold tracking-tight hover:border-zinc-200 focus:bg-white"
               aria-label="Song title"
@@ -432,6 +433,7 @@ export default function SongEditorPage() {
               icon={<DownloadIcon />}
               loading={generating}
               onClick={handleGenerate}
+              data-tour="song-editor-generate"
             >
               {generating ? "Generating PowerPoint..." : "Generate PowerPoint"}
             </Button>
@@ -461,9 +463,13 @@ export default function SongEditorPage() {
       <div className="grid gap-6 xl:h-[calc(100vh-12rem)] xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_400px]">
         {/* Sections editor */}
         <div
+          data-tour="song-editor-sections"
           className={`${tab === "preview" ? "hidden xl:block" : "block"} min-h-0 xl:overflow-y-auto xl:pr-1`}
         >
-          <div className="mb-3 flex items-center justify-between">
+          <div
+            className="mb-3 flex items-center justify-between"
+            data-tour="song-editor-preview"
+          >
             <div>
               <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                 <EditIcon width={14} height={14} />
@@ -563,7 +569,7 @@ export default function SongEditorPage() {
               }))
             }
           />
-          <div className="mt-6">
+          <div className="mt-6" data-tour="song-editor-settings">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Presentation Settings
             </h2>

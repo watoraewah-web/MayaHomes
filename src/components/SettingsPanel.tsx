@@ -74,13 +74,18 @@ function SegmentedControl<T extends string>({
 
 function Group({
   title,
+  dataTour,
   children,
 }: {
   title: string;
+  dataTour?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-zinc-100 px-4 py-4 last:border-b-0">
+    <div
+      data-tour={dataTour}
+      className="border-b border-zinc-100 px-4 py-4 last:border-b-0"
+    >
       <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
         {title}
       </h3>
@@ -213,7 +218,7 @@ export function SettingsPanel({
     <div
       className={`${scrollable ? "max-h-[calc(100vh-10rem)] overflow-y-auto" : ""} rounded-lg border border-zinc-200 bg-white shadow-card`}
     >
-      <Group title="Preset Themes">
+      <Group title="Preset Themes" dataTour="preset-themes">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {PRESENTATION_PRESETS.map((preset) => {
             const selected = settings.backgroundPresetId === preset.id;

@@ -97,6 +97,7 @@ export default function WorshipSetsPage() {
           variant="primary"
           icon={<PlusIcon />}
           onClick={() => router.push("/worship-sets/new")}
+          data-tour="worship-sets-create"
         >
           Create New Worship Set
         </Button>
@@ -120,7 +121,10 @@ export default function WorshipSetsPage() {
           }
         />
       ) : (
-        <Card className="divide-y divide-zinc-100">
+        <Card
+          className="divide-y divide-zinc-100"
+          data-tour="worship-sets-list"
+        >
           {sets.map((set) => (
             <div
               key={set.id}

@@ -10,6 +10,7 @@ import {
 import { fetchProfile } from "@/lib/supabase/data";
 import { Profile } from "@/lib/types";
 import { PageLoader } from "@/components/ui";
+import { TourProvider, useTour } from "@/components/tour/TourProvider";
 import {
   DashboardIcon,
   LogoutIcon,
@@ -23,10 +24,25 @@ import {
 } from "@/components/icons";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { href: "/songs", label: "Songs", icon: SongsIcon },
-  { href: "/worship-sets", label: "Worship Sets", icon: WorshipSetsIcon },
-  { href: "/settings", label: "Settings", icon: SettingsIcon },
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    icon: DashboardIcon,
+    tour: "dashboard-nav",
+  },
+  { href: "/songs", label: "Songs", icon: SongsIcon, tour: "songs-nav" },
+  {
+    href: "/worship-sets",
+    label: "Worship Sets",
+    icon: WorshipSetsIcon,
+    tour: "worship-sets-nav",
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    icon: SettingsIcon,
+    tour: "settings-nav",
+  },
 ];
 
 function SidebarContent({
@@ -41,6 +57,7 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const { startCurrentTour } = useTour();
 
   return (
     <div className="flex h-full flex-col">
@@ -52,7 +69,7 @@ function SidebarContent({
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, label, icon: Icon, tour }) => {
           const active =
             pathname === href ||
             (href !== "/dashboard" && pathname.startsWith(href));
@@ -60,6 +77,7 @@ function SidebarContent({
             <Link
               key={href}
               href={href}
+              data-tour={tour}
               onClick={onNavigate}
               className={`focus-ring flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 active
@@ -75,6 +93,13 @@ function SidebarContent({
       </nav>
 
       <div className="border-t border-zinc-200 p-3">
+        <button
+          type="button"
+          onClick={startCurrentTour}
+          className="focus-ring mb-1 flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+        >
+          Take a Tour
+        </button>
         <Link
           href="/settings"
           onClick={onNavigate}
@@ -199,64 +224,66 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Desktop sidebar */}
-      <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-white lg:block">
-        <div className="fixed inset-y-0 left-0 w-60">
-          <SidebarContent
-            profile={profile}
-            email={user.email}
-            onSignOut={handleSignOut}
-          />
-        </div>
-      </aside>
-
-      {/* Mobile top bar */}
-      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 lg:hidden">
-        <div className="flex items-center gap-2.5">
-          <MayaMark className="h-8 w-8 text-zinc-900" />
-          <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
-            WFICM
-          </span>
-        </div>
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="focus-ring rounded-md p-2 text-zinc-600 hover:bg-zinc-100"
-          aria-label="Open menu"
-        >
-          <MenuIcon width={18} height={18} />
-        </button>
-      </div>
-
-      {/* Mobile drawer */}
-      {mobileOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div
-            className="absolute inset-0 bg-zinc-900/40"
-            onClick={() => setMobileOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="absolute inset-y-0 left-0 w-64 border-r border-zinc-200 bg-white shadow-overlay">
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="focus-ring absolute right-2 top-4 rounded-md p-2 text-zinc-500 hover:bg-zinc-100"
-              aria-label="Close menu"
-            >
-              <CloseIcon width={16} height={16} />
-            </button>
+    <TourProvider>
+      <div className="flex min-h-screen">
+        {/* Desktop sidebar */}
+        <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-white lg:block">
+          <div className="fixed inset-y-0 left-0 w-60">
             <SidebarContent
               profile={profile}
               email={user.email}
               onSignOut={handleSignOut}
-              onNavigate={() => setMobileOpen(false)}
             />
           </div>
-        </div>
-      ) : null}
+        </aside>
 
-      <main className="w-full min-w-0 flex-1 pb-16 pt-14 lg:pb-0 lg:pt-0">
-        {children}
-      </main>
-    </div>
+        {/* Mobile top bar */}
+        <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 lg:hidden">
+          <div className="flex items-center gap-2.5">
+            <MayaMark className="h-8 w-8 text-zinc-900" />
+            <span className="text-sm font-semibold tracking-[0.22em] text-zinc-900">
+              WFICM
+            </span>
+          </div>
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="focus-ring rounded-md p-2 text-zinc-600 hover:bg-zinc-100"
+            aria-label="Open menu"
+          >
+            <MenuIcon width={18} height={18} />
+          </button>
+        </div>
+
+        {/* Mobile drawer */}
+        {mobileOpen ? (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <div
+              className="absolute inset-0 bg-zinc-900/40"
+              onClick={() => setMobileOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="absolute inset-y-0 left-0 w-64 border-r border-zinc-200 bg-white shadow-overlay">
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="focus-ring absolute right-2 top-4 rounded-md p-2 text-zinc-500 hover:bg-zinc-100"
+                aria-label="Close menu"
+              >
+                <CloseIcon width={16} height={16} />
+              </button>
+              <SidebarContent
+                profile={profile}
+                email={user.email}
+                onSignOut={handleSignOut}
+                onNavigate={() => setMobileOpen(false)}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <main className="w-full min-w-0 flex-1 pb-16 pt-14 lg:pb-0 lg:pt-0">
+          {children}
+        </main>
+      </div>
+    </TourProvider>
   );
 }

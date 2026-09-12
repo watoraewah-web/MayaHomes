@@ -177,12 +177,13 @@ export default function SongsPage() {
           variant="primary"
           icon={<PlusIcon />}
           onClick={() => router.push("/songs/new")}
+          data-tour="songs-create"
         >
           Create New Song
         </Button>
       </div>
 
-      <div className="relative mb-5 max-w-sm">
+      <div className="relative mb-5 max-w-sm" data-tour="songs-search">
         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
         <Input
           value={search}
@@ -254,7 +255,7 @@ export default function SongsPage() {
           description={`No songs match "${search}".`}
         />
       ) : (
-        <Card className="divide-y divide-zinc-100">
+        <Card className="divide-y divide-zinc-100" data-tour="songs-list">
           {filtered.map((song) => {
             const sectionCount = sectionsBySong[song.id]?.length ?? 0;
             return (
