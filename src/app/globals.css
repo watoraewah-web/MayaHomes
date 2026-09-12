@@ -101,6 +101,32 @@ html[data-theme="dark"] .hover\:text-zinc-900:hover {
   opacity: 0.92;
 }
 
+.auth-page,
+.auth-page > div,
+.auth-page section,
+.auth-page aside,
+.auth-page input {
+  background-color: #fff;
+}
+
+html[data-theme="dark"] .auth-page {
+  background-color: #fff !important;
+  color: #18181b !important;
+}
+
+html[data-theme="dark"] .auth-page .bg-white {
+  background-color: #fff !important;
+}
+
+html[data-theme="dark"] .auth-page .text-zinc-900,
+html[data-theme="dark"] .auth-page .text-zinc-950 {
+  color: #18181b !important;
+}
+
+html[data-theme="dark"] .auth-page .text-zinc-500 {
+  color: #71717a !important;
+}
+
 @media (max-width: 1023px) {
   .auth-art-panel {
     min-height: 15rem;

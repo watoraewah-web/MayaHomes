@@ -9,7 +9,7 @@ function HalftoneArtwork() {
       <img
         src="/auth-artwork.png"
         alt=""
-        className="h-full w-full object-cover object-center"
+        className="h-full w-full object-contain object-center"
       />
     </div>
   );
@@ -27,7 +27,7 @@ export function AuthLayout({
   footer: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-white text-zinc-900">
+    <main className="auth-page min-h-screen bg-white text-zinc-900">
       <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
         <section className="order-1 flex min-h-screen items-center justify-center px-6 py-10 sm:px-10 lg:px-14 xl:px-20">
           <div className="w-full max-w-[25rem]">
@@ -52,10 +52,10 @@ export function AuthLayout({
             {footer}
           </div>
         </section>
-        <aside className="auth-art-panel order-2 relative min-h-[11rem] overflow-hidden bg-black lg:min-h-screen">
+        <aside className="auth-art-panel order-2 relative min-h-[11rem] overflow-hidden bg-white lg:min-h-screen">
           <HalftoneArtwork />
-          <p className="absolute bottom-8 left-8 text-[0.62rem] font-medium uppercase tracking-[0.3em] text-white/45 lg:left-10">
-            Make space for wonder
+          <p className="absolute bottom-8 left-8 text-[0.62rem] font-medium uppercase tracking-[0.3em] text-zinc-400 lg:left-10">
+            WFICM
           </p>
         </aside>
       </div>
