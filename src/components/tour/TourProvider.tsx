@@ -97,6 +97,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [pathname, tour]);
 
   const activeStep = tour?.steps[stepIndex] ?? null;
+  const spotlight = targetRect ? getSpotlightBounds(targetRect) : null;
   useEffect(() => {
     if (!tour || !activeStep) return;
     let frame = 0;
@@ -258,15 +259,50 @@ export function TourProvider({ children }: { children: ReactNode }) {
       ) : null}
       {tour && activeStep && targetRect ? (
         <div className="pointer-events-none fixed inset-0 z-[999]">
-          <div
-            className="absolute rounded-md ring-1 ring-white/70 shadow-[0_0_0_9999px_rgba(24,24,27,0.36)]"
-            style={{
-              top: targetRect.top - 5,
-              left: targetRect.left - 5,
-              width: targetRect.width + 10,
-              height: targetRect.height + 10,
-            }}
-          />
+          {spotlight ? (
+            <>
+              <div
+                className="absolute bg-zinc-900/36"
+                style={{ top: 0, left: 0, right: 0, height: spotlight.top }}
+              />
+              <div
+                className="absolute bg-zinc-900/36"
+                style={{
+                  top: spotlight.top,
+                  left: 0,
+                  width: spotlight.left,
+                  height: spotlight.height,
+                }}
+              />
+              <div
+                className="absolute bg-zinc-900/36"
+                style={{
+                  top: spotlight.top,
+                  left: spotlight.rightEdge,
+                  right: 0,
+                  height: spotlight.height,
+                }}
+              />
+              <div
+                className="absolute bg-zinc-900/36"
+                style={{
+                  top: spotlight.bottom,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                }}
+              />
+              <div
+                className="absolute rounded-md ring-1 ring-white/70"
+                style={{
+                  top: spotlight.top,
+                  left: spotlight.left,
+                  width: spotlight.width,
+                  height: spotlight.height,
+                }}
+              />
+            </>
+          ) : null}
           <div
             className="pointer-events-auto absolute w-[min(19rem,calc(100vw-2rem))] rounded-lg border border-zinc-200 bg-white p-4 shadow-overlay"
             style={tooltipStyle(targetRect, activeStep.placement)}
@@ -349,29 +385,83 @@ function advanceToAvailable(
   } else setStepIndex(next);
 }
 
+function getSpotlightBounds(rect: Rect) {
+  const padding = 5;
+  const top = Math.max(0, rect.top - padding);
+  const left = Math.max(0, rect.left - padding);
+  const rightEdge = Math.min(
+    window.innerWidth,
+    rect.left + rect.width + padding,
+  );
+  const bottom = Math.min(window.innerHeight, rect.top + rect.height + padding);
+
+  return {
+    top,
+    left,
+    rightEdge,
+    bottom,
+    width: Math.max(0, rightEdge - left),
+    height: Math.max(0, bottom - top),
+  };
+}
+
 function tooltipStyle(
   rect: Rect,
   placement: TourPlacement = "bottom",
 ): React.CSSProperties {
   const gap = 14;
-  const width = 304;
-  const height = 190;
-  let left = rect.left + rect.width / 2 - width / 2;
-  let top = rect.top + rect.height + gap;
+  const margin = 16;
+  const width = Math.min(304, window.innerWidth - margin * 2);
+  const height = Math.min(220, window.innerHeight - margin * 2);
+  const placements: TourPlacement[] = [
+    placement,
+    ...(["top", "bottom", "left", "right"] as TourPlacement[]).filter(
+      (candidate) => candidate !== placement,
+    ),
+  ];
 
-  if (placement === "top") top = rect.top - height - gap;
-  if (placement === "left") {
-    left = rect.left - width - gap;
-    top = rect.top + rect.height / 2 - height / 2;
-  }
-  if (placement === "right") {
-    left = rect.left + rect.width + gap;
-    top = rect.top + rect.height / 2 - height / 2;
-  }
+  const getPosition = (candidate: TourPlacement) => {
+    if (candidate === "top")
+      return {
+        left: rect.left + rect.width / 2 - width / 2,
+        top: rect.top - height - gap,
+      };
+    if (candidate === "left")
+      return {
+        left: rect.left - width - gap,
+        top: rect.top + rect.height / 2 - height / 2,
+      };
+    if (candidate === "right")
+      return {
+        left: rect.left + rect.width + gap,
+        top: rect.top + rect.height / 2 - height / 2,
+      };
+    return {
+      left: rect.left + rect.width / 2 - width / 2,
+      top: rect.top + rect.height + gap,
+    };
+  };
+
+  const position =
+    placements
+      .map((candidate) => ({ candidate, ...getPosition(candidate) }))
+      .find(
+        ({ left, top }) =>
+          left >= margin &&
+          left + width <= window.innerWidth - margin &&
+          top >= margin &&
+          top + height <= window.innerHeight - margin,
+      ) ?? getPosition(placement);
 
   return {
-    left: Math.max(16, Math.min(window.innerWidth - width - 16, left)),
-    top: Math.max(16, Math.min(window.innerHeight - height - 16, top)),
+    left: Math.max(
+      margin,
+      Math.min(window.innerWidth - width - margin, position.left),
+    ),
+    top: Math.max(
+      margin,
+      Math.min(window.innerHeight - height - margin, position.top),
+    ),
   };
 }
 
